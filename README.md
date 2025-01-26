@@ -320,7 +320,7 @@ Next, we proceed in two distinct directions, each focusing on a critical aspect 
 1. **INFERENCE AND DOWNSTREAM TASKS**: Utilize the pre-trained LWM-v1.1 model to perform inference and adapt it for specific tasks such as classification or regression.  
 2. **PRE-TRAINING LWM-v1.1**: Explore the process of pre-training the model from scratch, including the techniques and datasets used to develop its foundational capabilities.  
 
-The corresponding scripts for these processes can be found in the **`downstream.py`** and **`main.py`** files available at [**Hugging Face Repository**](https://huggingface.co/wi-lab/lwm-v1.1/tree/main).
+The corresponding scripts for these processes can be found in the **`downstream.py`** and **`main.py`** files available at [**Hugging Face Repository**](https://huggingface.co/wi-lab/lwm-v1.1/tree/main). The following sections provide complementary explanations to support their use.
 
 ---
 
@@ -858,6 +858,6 @@ Experience **LWM** interactively via our Hugging Face Spaces demo:
 You are now ready to explore the power of **LWM** in wireless communications! Start processing datasets and generate high-quality embeddings to advance your research or applications.
 
 If you have questions or need assistance, feel free to:
-- Visit the [Hugging Face Discussions](https://huggingface.co/wi-lab/lwm/discussions) for community support.
+- Visit the [Hugging Face Discussions](https://huggingface.co/wi-lab/lwm-v1.1/discussions) for community support.
 - Check out the [LWM website FAQ](https://lwm-wireless.net/community).
 - Contact us directly via email at [lwmwireless@gmail.com](mailto:lwmwireless@gmail.com).

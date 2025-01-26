@@ -38,6 +38,16 @@ LWM-v1.1 is designed to be seamlessly integrated into downstream tasks as a sour
 - **Broad Generalization**: Trained on a larger, more diverse dataset for reliable performance across environments.
 - **Task Adaptability**: Fine-tuning options enable seamless integration into a wide range of applications.
 
+For example, the following figure demonstrates the advantages of using **LWM-v1.1-based highly compact CLS embeddings** and **high-dimensional channel embeddings** over raw channels for the LoS/NLoS classification task. The raw dataset is derived from channels of size (128, 32) between BS 3 and 8,299 users in the densified Denver scenario of the DeepMIMO dataset.
+
+<p align="center">
+  <img src="https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/los_perf.png" alt="LoS/NLoS Classification Performance" width="800"/>
+</p>
+
+<p align="center">
+  <strong>Figure:</strong> LoS/NLoS classification performance comparison
+</p>
+
 ---
 
 ## **Overview of Main Changes in LWM-v1.1**
@@ -475,7 +485,22 @@ chs = lwm_inference(
 )
 ```
 
-This generates embeddings or visualizations, depending on your configuration.
+This generates embeddings or visualizations, depending on your configuration. For example, the following figures show the 2D T-SNE representations of original, embedding, and fine-tuned embedding spaces for the LoS/NLoS classification and beam prediction tasks.
+
+### **LoS/NLoS Classification Task**
+
+| ![Image 1](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/los_raw.png) | ![Image 2](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/los_embedding_noFT.png) | ![Image 3](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/los_embedding_FT.png) |
+|:---------------------------------------------:|:---------------------------------------------:|:---------------------------------------------:|
+| **Raw Channels**                              | **General-purpose Embeddings**                | **Task-specific Embeddings**                  |
+
+---
+
+### **Beam Prediction Task**
+
+| ![Image 4](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/bp_raw.png) | ![Image 5](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/bp_embedding_noFT.png) | ![Image 6](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/bp_embedding_FT.png) |
+|:---------------------------------------------:|:---------------------------------------------:|:---------------------------------------------:|
+| **Raw Channels**                              | **General-purpose Embeddings**                | **Task-specific Embeddings**                  |
+
 
 ---
 

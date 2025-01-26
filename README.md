@@ -50,7 +50,7 @@ For example, the following figure demonstrates the advantages of using **LWM-v1.
 
 ---
 
-## **🧩 Puzzle Pieces that Redefine LWM-v1.0**
+# **🧩 Puzzle Pieces that Redefine LWM-v1.0**
 
 #### **1️⃣ Breaking Barriers**
 🔓 No Channel Size Limitation  
@@ -79,9 +79,7 @@ For example, the following figure demonstrates the advantages of using **LWM-v1.
 | Parameters                  | 600K                    | **2.5M**              |
 | Sequence Length Support     | 128                     | **512**               |
 
----
-
-## **Detailed Explanation of Changes in LWM-v1.1**
+# **Detailed Changes in LWM-v1.1**
 
 ### **No Channel Size Limitation**  
 In **LWM-v1.0**, the model was pre-trained on a single (N, SC) = (32, 32) pair, which limited its generalization to other channel configurations. Wireless communication systems in the real world exhibit vast variability in the number of antennas (N) at base stations and subcarriers (SC). To address this limitation, **LWM-v1.1** was pre-trained on **20 distinct (N, SC) pairs**, ranging from smaller setups like (8, 32) to more complex setups like (128, 64). This variety enables the model to effectively handle diverse channel configurations and ensures robust generalization without overfitting to specific configurations.
@@ -342,7 +340,7 @@ The corresponding scripts for these processes can be found in the **`downstream.
 
 ---
 
-## **1. INFERENCE & DOWNSTREAM TASKS**
+# **1. INFERENCE & DOWNSTREAM TASKS**
 
 ### **Loading Required Packages and Modules**
 
@@ -640,7 +638,7 @@ chs = lwm_inference(
 
 ---
 
-## **2. PRE-TRAINING LWM-v1.1**
+# **2. PRE-TRAINING LWM-v1.1**
 
 This section details the process of pre-training the **LWM-v1.1** model, including data preparation, model initialization, and optimization settings. Each step has been carefully designed to enable the model to learn robust and general-purpose embeddings for wireless channel data.
 
@@ -866,7 +864,7 @@ pretrained_model = train_lwm(
 
 ---
 
-### **Explore the Interactive Demo**
+# **Explore the Interactive Demo**
 
 Experience **LWM** interactively via our Hugging Face Spaces demo:  
 [**Try the Interactive Demo!**](https://huggingface.co/spaces/wi-lab/lwm-interactive-demo)

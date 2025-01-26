@@ -28,7 +28,7 @@ LWM-v1.1 provides a versatile feature extraction framework for wireless communic
 
 ### **How is LWM-v1.1 used?**
 
-LWM-v1.1 is designed to be seamlessly integrated into downstream tasks as a source of high-quality **embeddings**. By feeding raw wireless channel data into the model, users obtain contextualized representations that capture critical spatial relationships and dependencies. These embeddings enable efficient and accurate performance in applications such as **beam prediction**, **LoS/NLoS classification**, and **channel estimation**—even with limited labeled data.
+LWM-v1.1 is designed to be seamlessly integrated into downstream tasks as a source of high-quality **embeddings**. By feeding raw wireless channel data into the model, users obtain contextualized representations that capture critical spatial relationships and dependencies. These embeddings enable efficient and accurate performance with limited labeled data.
 
 ### **Advantages of Using LWM-v1.1**
 
@@ -117,7 +117,7 @@ In **LWM-v1.0**, patches were segmented based on a single dimension, typically g
 This multidimensional segmentation increases the complexity of the MCM task, requiring the model to learn deeper and more meaningful dependencies within the data. By better aligning the training methodology with real-world conditions, LWM-v1.1 further enhances its ability to generalize and perform in practical scenarios.
 
 ### **Optimized Training Strategy**  
-Training large models requires carefully designed optimization techniques to ensure smooth convergence and generalization. In **LWM-v1.1**, we adopted the **AdamW optimizer**, which improves weight regularization and prevents overfitting compared to traditional Adam. The learning rate schedule was also refined, incorporating an **85-step warmup phase** followed by **cosine decay**. This strategy ensures that the model transitions smoothly from the initial training phase to convergence, maintaining stability and improving overall performance.
+Training large models requires carefully designed optimization techniques to ensure smooth convergence and generalization. In **LWM-v1.1**, we adopted the **AdamW optimizer**, which improves weight regularization and prevents overfitting compared to traditional Adam. The learning rate schedule was also refined, incorporating an **5-step warmup phase** followed by **cosine decay**. This strategy ensures that the model transitions smoothly from the initial training phase to convergence, maintaining stability and improving overall performance.
 
 ### **Improved Computational Efficiency**  
 To balance computational efficiency with performance, we reduced the number of **attention heads per layer from 12 to 8** in **LWM-v1.1**. This reduction decreases the computational load during both training and inference, making the model more efficient without significantly affecting its ability to extract meaningful features. The streamlined architecture ensures that LWM-v1.1 is not only powerful but also practical for deployment in resource-constrained environments.

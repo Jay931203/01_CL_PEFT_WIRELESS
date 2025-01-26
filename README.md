@@ -114,7 +114,7 @@ The updates in LWM-v1.1 were driven by real-world demands for greater flexibilit
 
 ### **Try It Now!**  
 Explore **LWM-v1.1** on Hugging Face with preloaded datasets, fine-tuning options, and pretrained models to kickstart your projects.  
-[👉 Access the model here!](https://huggingface.co/wi-lab/lwm-v1.1)
+[👉 Access the model here!](https://huggingface.co/wi-lab/lwm-v1.1/tree/main)
 
 ---
 
@@ -315,7 +315,16 @@ This ensures that all paths and dependencies align with the repository structure
 
 ---
 
-## **Downstream Tasks**
+Next, we proceed in two distinct directions, each focusing on a critical aspect of **LWM-v1.1**:
+
+1. **INFERENCE AND DOWNSTREAM TASKS**: Utilize the pre-trained LWM-v1.1 model to perform inference and adapt it for specific tasks such as classification or regression.  
+2. **PRE-TRAINING LWM-v1.1**: Explore the process of pre-training the model from scratch, including the techniques and datasets used to develop its foundational capabilities.  
+
+The corresponding scripts for these processes can be found in the **`downstream.py`** and **`main.py`** files available at [**Hugging Face Repository**](https://huggingface.co/wi-lab/lwm-v1.1/tree/main).
+
+---
+
+## **1. INFERENCE & DOWNSTREAM TASKS**
 
 ### **Loading Required Packages and Modules**
 
@@ -493,8 +502,6 @@ This generates embeddings or visualizations, depending on your configuration. Fo
 |:---------------------------------------------:|:---------------------------------------------:|:---------------------------------------------:|
 | **Raw Channels**                              | **General-purpose Embeddings**                | **Task-specific Embeddings**                  |
 
----
-
 ### **Beam Prediction Task**
 
 | ![Image 4](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/bp_raw.png) | ![Image 5](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/bp_embedding_noFT.png) | ![Image 6](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/bp_embedding_FT.png) |
@@ -615,7 +622,233 @@ chs = lwm_inference(
 
 ---
 
-### **12. Explore the Interactive Demo**
+## **2. PRE-TRAINING LWM-v1.1**
+
+This section details the process of pre-training the **LWM-v1.1** model, including data preparation, model initialization, and optimization settings. Each step has been carefully designed to enable the model to learn robust and general-purpose embeddings for wireless channel data.
+
+---
+
+### **Loading Required Packages and Modules**
+
+The following packages are required to preprocess data, initialize the model, and train it effectively:
+
+```python
+import torch
+import torch.nn as nn
+from torch.utils.data import random_split
+from input_preprocess import tokenizer, scenarios_list
+from utils import create_dataloader, count_parameters
+import numpy as np
+import lwm_model
+from torch.optim.lr_scheduler import CosineAnnealingLR, LambdaLR
+from torch.optim import AdamW
+from train import train_lwm
+import warnings
+
+warnings.filterwarnings("ignore", category=UserWarning)
+```
+
+---
+
+### **Settings**
+
+Set the key hyperparameters for pretraining:
+
+```python
+EPOCHS = 50
+BATCH_SIZE = 128 
+VAL_BATCH_SIZE = 64 
+WARMUP_EPOCHS = 5
+BASE_LR = 5e-4
+N_ROWS = 4
+N_COLUMNS = 4
+ELEMENT_LENGTH = N_ROWS * N_COLUMNS * 2
+D_MODEL = 128 
+MAX_LEN = 513
+N_LAYERS = 12 
+WEIGHT_DECAY = 0.05
+BETA1 = 0.9
+BETA2 = 0.999
+MASK_PERCENT = 0.40
+N_HEADS = 8
+DROPOUT = 0.1
+```
+
+- **Data Parameters**:
+  - **`N_ROWS` and `N_COLUMNS`**: Number of rows and columns in each channel patch (4 antennas × 4 subcarriers).
+  - **`ELEMENT_LENGTH`**: Number of elements in each patch, including real and imaginary parts (\(4 \times 4 \times 2 = 32\)).
+  - **`MAX_LEN`**: Maximum input length (including positional encoding).
+
+- **Model Hyperparameters**:
+  - **`D_MODEL`**: Embedding size (128).
+  - **`N_LAYERS`**: Number of transformer layers (12).
+  - **`N_HEADS`**: Number of attention heads (8).
+  - **`DROPOUT`**: Dropout probability (0.1).
+
+- **Training Hyperparameters**:
+  - **`EPOCHS`**: Total number of epochs (50).
+  - **`BATCH_SIZE`**: Batch size for training (128) and validation (64).
+  - **`BASE_LR` and `WARMUP_EPOCHS`**: Initial learning rate (5e-4) and warmup period (5 epochs).
+  - **`MASK_PERCENT`**: Percentage of masked patches during pretraining (40%).
+
+---
+
+### **Generating the Dataset**
+
+The dataset is prepared by tokenizing scenarios using the `tokenizer` function:
+
+```python
+bs_idxs = [1, 2, 3] 
+selected_scenario_names = scenarios_list()[:80] 
+preprocessed_data = tokenizer(
+    selected_scenario_names, 
+    MAX_LEN, 
+    masking_percent=MASK_PERCENT, 
+    mask=True, 
+    seed=42
+)
+```
+
+- **Parameters**:
+  - **`bs_idxs`**: Selects base stations 1, 2, and 3 for data generation.
+  - **`selected_scenario_names`**: Uses the first 80 scenarios from the `scenarios_list`.
+  - **`masking_percent`**: Masks 40% of patches in each channel during pretraining.
+
+- **Outputs**:
+  - **`preprocessed_data`**: A dictionary where keys are scenario names, and values are preprocessed samples.
+
+---
+
+### **Splitting the Dataset**
+
+Split the dataset into training, validation, and test sets:
+
+```python
+SEED = 42
+torch.manual_seed(SEED)
+np.random.seed(SEED)
+train_ratio = 0.8
+val_ratio = 0.2
+train_data = {}
+val_data = {}
+test_data = {}
+
+for key, samples in preprocessed_data.items():
+    total_samples = len(samples)
+    train_size = int(train_ratio * total_samples)
+    val_size = int(val_ratio * total_samples)
+    test_size = total_samples - train_size - val_size
+    
+    train_data[key], val_data[key], test_data[key] = random_split(
+        samples, [train_size, val_size, test_size]
+    )
+
+train_loaders = create_dataloader(train_data, batch_size=BATCH_SIZE, shuffle=True)
+val_loaders = create_dataloader(val_data, batch_size=VAL_BATCH_SIZE, shuffle=False)
+```
+
+- **Data Ratios**:
+  - **`train_ratio`**: 80% of the data for training.
+  - **`val_ratio`**: 20% for validation.
+  - Remaining samples are reserved for testing.
+
+- **Data Loaders**:
+  - `train_loaders` and `val_loaders` provide batched data for training and validation.
+
+---
+
+### **Initializing the Model**
+
+Initialize **LWM-v1.1** and optionally load a pretrained checkpoint:
+
+```python
+load_model = True
+gpu_ids = [0]
+device = torch.device("cuda:0")
+model = lwm_model.lwm().to(device)
+
+if load_model:
+    model_name = "lwm_epoch50_train0.0077_val0.0060_masking0.40.pth"
+    state_dict = torch.load(f"models/{model_name}", map_location=device)
+    new_state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
+    model.load_state_dict(new_state_dict)
+
+model = nn.DataParallel(model, gpu_ids)
+print(f"Model loaded successfully on GPU {device.index}")
+n_parameters = count_parameters(model)
+print(f"Number of trainable parameters: {n_parameters:,}")
+```
+
+- **GPU Handling**:
+  - The model runs on GPU `cuda:0`. It can also use multiple GPUs if specified.
+
+- **Checkpoint Loading**:
+  - If `load_model` is `True`, a pretrained checkpoint is loaded, ensuring the model starts with learned weights.
+
+- **Parameter Count**:
+  - Displays the number of trainable parameters for transparency.
+
+---
+
+### **Optimizer and Learning Rate Scheduler**
+
+Define the optimizer and learning rate scheduler:
+
+```python
+optimizer = AdamW(
+    model.parameters(),
+    lr=BASE_LR,
+    betas=(BETA1, BETA2),
+    weight_decay=WEIGHT_DECAY
+)
+
+def lr_lambda(current_step):
+    if current_step < WARMUP_STEPS:
+        return current_step / WARMUP_STEPS
+    else:
+        scaled_progress = (current_step - WARMUP_STEPS) / (TOTAL_STEPS - WARMUP_STEPS)
+        cosine_decay = 0.5 * (1 + np.cos(np.pi * scaled_progress))
+        return cosine_decay * (BASE_LR - MIN_LR) / BASE_LR + MIN_LR / BASE_LR
+
+scheduler = LambdaLR(optimizer, lr_lambda=lr_lambda)
+```
+
+- **AdamW Optimizer**:
+  - Includes weight decay for better generalization.
+- **Learning Rate Scheduler**:
+  - Combines linear warmup and cosine decay for smooth training.
+
+---
+
+### **Training the Model**
+
+Train the model using the `train_lwm` function:
+
+```python
+pretrained_model = train_lwm(
+    model,
+    train_loaders,
+    val_loaders,
+    optimizer,
+    scheduler,
+    EPOCHS,
+    device=device
+)
+```
+
+- **Inputs**:
+  - **`model`**: The initialized LWM model.
+  - **`train_loaders` and `val_loaders`**: Data loaders for training and validation.
+  - **`optimizer` and `scheduler`**: Configured optimizer and learning rate scheduler.
+  - **`EPOCHS`**: Number of training epochs.
+  - **`device`**: Specifies whether training occurs on GPU or CPU.
+
+- **Output**:
+  - **`pretrained_model`**: The trained LWM-v1.1 model.
+
+---
+
+### **Explore the Interactive Demo**
 
 Experience **LWM** interactively via our Hugging Face Spaces demo:  
 [**Try the Interactive Demo!**](https://huggingface.co/spaces/wi-lab/lwm-interactive-demo)

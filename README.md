@@ -41,7 +41,7 @@ LWM-v1.1 is designed to be seamlessly integrated into downstream tasks as a sour
 For example, the following figure demonstrates the advantages of using **LWM-v1.1-based highly compact CLS embeddings** and **high-dimensional channel embeddings** over raw channels for the LoS/NLoS classification task. The raw dataset is derived from channels of size (128, 32) between BS 3 and 8,299 users in the densified Denver scenario of the DeepMIMO dataset.
 
 <p align="center">
-  <img src="https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/los_perf.png" alt="LoS/NLoS Classification Performance" width="800"/>
+  <img src="https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/los_perf.png" alt="LoS/NLoS Classification Performance" width="600"/>
 </p>
 
 <p align="center">
@@ -50,16 +50,32 @@ For example, the following figure demonstrates the advantages of using **LWM-v1.
 
 ---
 
-## **Overview of Main Changes in LWM-v1.1**
-1. **No channel size limitation**  
-2. **Larger and more diverse pretraining dataset**  
-3. **Fine-tuning capabilities for task-specific embedding generation**  
-4. **Increased model capacity**  
-5. **2D patch segmentation for realistic learning**  
-6. **Challenging MCM task with higher masking ratio**  
-7. **Support for larger input sizes**  
-8. **Optimized training strategy**  
-9. **Improved computational efficiency**  
+### **🧩 Puzzle Pieces that Redefine LWM-v1.0**
+
+#### **1️⃣ Breaking Barriers**
+🔓 No Channel Size Limitation  
+📏 Support for Larger Input Sizes  
+
+#### **2️⃣ Smarter Foundations**
+🌍 A More Diverse Dataset  
+🎭 Tougher Masking Challenges with 40% MCM Ratio  
+
+#### **3️⃣ Amplified Power**
+🔢 Expanded Capacity: 2.5M Parameters  
+📐 Realistic 2D Patch Segmentation  
+
+#### **4️⃣ Efficiency Engineered**
+⚙️ Optimized Training with AdamW + Cosine Decay  
+⚡ Faster Computation with Streamlined Attention Heads  
+
+### **🌀 See the Difference at a Glance**
+
+| Feature                     | LWM-v1.0                | **LWM-v1.1**          |
+|-----------------------------|-------------------------|-----------------------|
+| Channel Size Limitation     | Fixed at (32, 32)      | **Dynamic, up to (512)** |
+| Masking Ratio               | 15%                    | **40%**              |
+| Parameters                  | 600K                   | **2.5M**             |
+| Sequence Length Support     | 128                    | **512**              |
 
 ---
 

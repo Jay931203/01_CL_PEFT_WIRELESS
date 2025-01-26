@@ -20,7 +20,7 @@ LWM-v1.1 is a powerful **pre-trained** model developed as a **universal feature 
 
 ### **How is LWM-v1.1 built?**
 
-The LWM-v1.1 architecture is built on transformers, designed to capture **fine-grained and global dependencies** in wireless channel data. The model employs an updated version of **Masked Channel Modeling (MCM)**, increasing the masking ratio to make pretraining more challenging and effective. With **2D patch segmentation**, the model learns intricate relationships across both antennas and subcarriers, while **bucket-based batching** ensures efficient processing of variable-sized inputs. These enhancements make LWM-v1.1 highly scalable and adaptable, offering robust embeddings for diverse scenarios.
+The LWM-v1.1 architecture is built on transformers, designed to capture **dependencies** in wireless channel data. The model employs an updated version of **Masked Channel Modeling (MCM)**, increasing the masking ratio to make pretraining more challenging and effective. With **2D patch segmentation**, the model learns intricate relationships across both antennas and subcarriers, while **bucket-based batching** ensures efficient processing of variable-sized inputs. These enhancements make LWM-v1.1 highly scalable and adaptable, offering robust embeddings for diverse scenarios.
 
 ### **What does LWM-v1.1 offer?**
 
@@ -692,7 +692,7 @@ DROPOUT = 0.1
 
 - **Data Parameters**:
   - **`N_ROWS` and `N_COLUMNS`**: Number of rows and columns in each channel patch (4 antennas × 4 subcarriers).
-  - **`ELEMENT_LENGTH`**: Number of elements in each patch, including real and imaginary parts (\(4 \times 4 \times 2 = 32\)).
+  - **`ELEMENT_LENGTH`**: Number of elements in each patch, including real and imaginary parts (4 * 4 * 2 = 32).
   - **`MAX_LEN`**: Maximum input length (including positional encoding).
 
 - **Model Hyperparameters**:
@@ -784,7 +784,7 @@ device = torch.device("cuda:0")
 model = lwm_model.lwm().to(device)
 
 if load_model:
-    model_name = "lwm_epoch50_train0.0077_val0.0060_masking0.40.pth"
+    model_name = "model.pth"
     state_dict = torch.load(f"models/{model_name}", map_location=device)
     new_state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
     model.load_state_dict(new_state_dict)

@@ -50,7 +50,7 @@ For example, the following figure demonstrates the advantages of using **LWM-v1.
 
 ---
 
-### **🧩 Puzzle Pieces that Redefine LWM-v1.0**
+## **🧩 Puzzle Pieces that Redefine LWM-v1.0**
 
 #### **1️⃣ Breaking Barriers**
 🔓 No Channel Size Limitation  
@@ -72,10 +72,12 @@ For example, the following figure demonstrates the advantages of using **LWM-v1.
 
 | Feature                     | LWM-v1.0                | **LWM-v1.1**          |
 |-----------------------------|-------------------------|-----------------------|
-| Channel Size Limitation     | Fixed at (32, 32)      | **Dynamic, up to (512)** |
-| Masking Ratio               | 15%                    | **40%**              |
-| Parameters                  | 600K                   | **2.5M**             |
-| Sequence Length Support     | 128                    | **512**              |
+| Channel Size Limitation     | Fixed at (32, 32)       | **Dynamic**           |
+| Pre-training Samples        | 820K                    | **1.05M**              |
+| Pre-training Scenarios      | 15                      | **80**                |
+| Masking Ratio               | 15%                     | **40%**               |
+| Parameters                  | 600K                    | **2.5M**              |
+| Sequence Length Support     | 128                     | **512**               |
 
 ---
 
@@ -91,7 +93,7 @@ This approach eliminates the rigidity of fixed channel sizes and positions LWM-v
 ### **Larger and More Diverse Pretraining Dataset**  
 Generalization is a critical aspect of any foundation model. In **LWM-v1.1**, we significantly expanded the training dataset to cover more diverse scenarios and environments. We added **seven new city scenarios**—Charlotte, Denver, Oklahoma, Indianapolis, Fort Worth, Santa Clara, and San Diego—to enrich the model’s exposure to a variety of urban layouts. To enhance the spatial resolution of the training data, we reduced the grid spacing between user locations in the DeepMIMO city scenarios from **2.5m to 1m**, resulting in a higher density of user positions. This adjustment required re-performing ray tracing for all scenarios to generate high-resolution wireless channel data.
 
-Additionally, we introduced **channels from multiple base stations** in each scenario, with distinct (N, SC) pairs to ensure the model encounters a broad range of channel characteristics. This diversity mirrors the variability found in real-world deployments, such as urban, suburban, and rural environments. By exposing LWM-v1.1 to this diversity, the model gains the ability to generalize across environments with distinct propagation characteristics, making it more reliable and versatile.
+Additionally, we introduced **channels from multiple base stations** in each scenario, with distinct (N, SC) pairs to ensure the model encounters a broad range of channel characteristics. This expansion resulted in a total of **1.3 million pre-training samples**, with 20% allocated for validation. This diversity mirrors the variability found in real-world deployments, such as urban, suburban, and rural environments. By exposing LWM-v1.1 to this diversity, the model gains the ability to generalize across environments with distinct propagation characteristics, making it more reliable and versatile.
 
 ### **Fine-Tuning for Task-Specific Embedding Generation**  
 While pretraining provides a robust feature extractor, downstream tasks often require tailored embeddings. In **LWM-v1.1**, we introduced **fine-tuning options** that give users the flexibility to customize the model for specific tasks. Users can now **freeze specific layers** of the model, allowing the remaining layers to adapt to task-specific requirements. This feature is particularly valuable for tasks prone to overfitting, such as **LoS/NLoS classification**, where excessive training on all layers can lead to suboptimal generalization.

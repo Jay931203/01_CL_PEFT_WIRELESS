@@ -74,7 +74,7 @@ For example, the following figure demonstrates the advantages of using **LWM-v1.
 |-----------------------------|-------------------------|-----------------------|
 | Channel Size Limitation     | Fixed at (32, 32)       | **Dynamic**           |
 | Pre-training Samples        | 820K                    | **1.05M**              |
-| Pre-training Scenarios      | 15                      | **80**                |
+| Pre-training Scenarios      | 15                      | **140**                |
 | Masking Ratio               | 15%                     | **40%**               |
 | Parameters                  | 600K                    | **2.5M**              |
 | Sequence Length Support     | 128                     | **512**               |

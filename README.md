@@ -418,7 +418,7 @@ selected_scenario_names = [scenarios_list()[6]]  # Choose a specific scenario
 8. **`selected_scenario_names`**:  
    - Specifies the scenario(s) from the dataset to use for training and evaluation.  
    - **`scenarios_list()`**: A utility function that provides all available scenarios in the dataset.  
-   - `[18]`: Selects the 18th scenario, which corresponds to a specific wireless environment and base station configuration. In this case, scenario 18 represents channels of size (128, 32) between BS 3 and users in the densified Denver scenario.
+   - `[6]`: Selects the 6th scenario, representing a specific wireless environment and base station configuration. In this case, Scenario 6 corresponds to channels of size \((16, 32)\) between BS 3 and users in the densified **Miami** scenario. The dataset is available at [**Hugging Face Datasets**](https://huggingface.co/datasets/wi-lab/lwm/tree/main).
 
 ---
 
@@ -505,13 +505,13 @@ This generates embeddings or visualizations, depending on your configuration. Fo
 
 | ![Image 1](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/los_raw.png) | ![Image 2](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/los_embedding_noFT.png) | ![Image 3](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/los_embedding_FT.png) |
 |:---------------------------------------------:|:---------------------------------------------:|:---------------------------------------------:|
-| **Raw Channels**                              | **General-purpose Embeddings**                | **Task-specific Embeddings**                  |
+| **Raw Channels**                              | **General-Purpose Embeddings**                | **Task-Specific Embeddings**                  |
 
 ### **Beam Prediction Task**
 
 | ![Image 4](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/bp_raw.png) | ![Image 5](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/bp_embedding_noFT.png) | ![Image 6](https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/bp_embedding_FT.png) |
 |:---------------------------------------------:|:---------------------------------------------:|:---------------------------------------------:|
-| **Raw Channels**                              | **General-purpose Embeddings**                | **Task-specific Embeddings**                  |
+| **Raw Channels**                              | **General-Purpose Embeddings**                | **Task-Specific Embeddings**                  |
 
 
 ---

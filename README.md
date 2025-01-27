@@ -12,7 +12,7 @@ base_model:
 - wi-lab/lwm
 ---
 
-# **LWM-v1.1**
+# **LWM 1.1**
 
 **[🚀 Click here to try the Interactive Demo Based on LWM-v1.0!](https://huggingface.co/spaces/wi-lab/lwm-interactive-demo)**
 

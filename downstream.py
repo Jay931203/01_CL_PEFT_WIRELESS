@@ -27,7 +27,7 @@ visualization_method = ["pca", "umap", "tsne"][2]
 input_types = ["cls_emb", "channel_emb", "raw"]
 train_ratios = [.001, .01, .05, .1, .25, .5, .8]
 fine_tuning_status = [None, ["layers.8", "layers.9", "layers.10", "layers.11"], "full"]
-selected_scenario_names = [scenarios_list()[18]] 
+selected_scenario_names = [scenarios_list()[6]] 
 preprocessed_data, labels, raw_chs = tokenizer(
     selected_scenario_names, 
     bs_idxs=[3], 
@@ -39,7 +39,7 @@ gpu_ids = [0]
 device = torch.device("cuda:0")
 model = lwm_model.lwm().to(device)
 
-model_name = "lwm_epoch50_train0.0077_val0.0060_masking0.40.pth"
+model_name = "model.pth"
 state_dict = torch.load(f"models/{model_name}", map_location=device)
 new_state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
 model.load_state_dict(new_state_dict)

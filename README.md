@@ -371,14 +371,6 @@ input_types = ["cls_emb", "channel_emb", "raw"]  # Supported input types
 train_ratios = [.001, .01, .05, .1, .25, .5, .8]  # Fraction of data for training
 fine_tuning_status = [None, ["layers.8", "layers.9", "layers.10", "layers.11"], "full"]  # Fine-tuning configurations
 selected_scenario_names = [scenarios_list()[6]]  # Choose a specific scenario
-
-preprocessed_data, labels, raw_chs = tokenizer(
-    selected_scenario_names, 
-    bs_idxs=[3], 
-    load_data=False, 
-    task=task, 
-    n_beams=n_beams
-)
 ```
 
 #### **Parameters**

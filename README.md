@@ -299,12 +299,9 @@ If you plan to use custom datasets, please ensure that your complex channel cont
 ```python
 import numpy as np
 dataset_repo_url = "https://huggingface.co/datasets/wi-lab/lwm"  # Base URL for dataset repo
-scenario_names = np.array([
-    "city_18_denver", "city_15_indianapolis", "city_19_oklahoma", 
-    "city_12_fortworth", "city_11_santaclara", "city_7_sandiego"
-])
+scenario_names = np.array(["city_6_miami])
 
-scenario_idxs = np.array([3])  # Select the scenario index
+scenario_idxs = np.array([0])  # Select the scenario index
 selected_scenario_names = scenario_names[scenario_idxs]
 
 # Clone the requested scenarios
@@ -373,7 +370,7 @@ visualization_method = ["pca", "umap", "tsne"][2]  # Default: TSNE
 input_types = ["cls_emb", "channel_emb", "raw"]  # Supported input types
 train_ratios = [.001, .01, .05, .1, .25, .5, .8]  # Fraction of data for training
 fine_tuning_status = [None, ["layers.8", "layers.9", "layers.10", "layers.11"], "full"]  # Fine-tuning configurations
-selected_scenario_names = [scenarios_list()[18]]  # Choose a specific scenario
+selected_scenario_names = [scenarios_list()[6]]  # Choose a specific scenario
 
 preprocessed_data, labels, raw_chs = tokenizer(
     selected_scenario_names, 

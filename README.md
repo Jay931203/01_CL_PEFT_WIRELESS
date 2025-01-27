@@ -299,7 +299,7 @@ If you plan to use custom datasets, please ensure that your complex channel cont
 ```python
 import numpy as np
 dataset_repo_url = "https://huggingface.co/datasets/wi-lab/lwm"  # Base URL for dataset repo
-scenario_names = np.array(["city_6_miami])
+scenario_names = np.array(["city_6_miami"])
 
 scenario_idxs = np.array([0])  # Select the scenario index
 selected_scenario_names = scenario_names[scenario_idxs]

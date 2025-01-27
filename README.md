@@ -418,7 +418,7 @@ selected_scenario_names = [scenarios_list()[6]]  # Choose a specific scenario
 8. **`selected_scenario_names`**:  
    - Specifies the scenario(s) from the dataset to use for training and evaluation.  
    - **`scenarios_list()`**: A utility function that provides all available scenarios in the dataset.  
-   - `[6]`: Selects the 6th scenario, representing a specific wireless environment and base station configuration. In this case, Scenario 6 corresponds to channels of size \((16, 32)\) between BS 3 and users in the densified **Miami** scenario. The dataset is available at [**Hugging Face Datasets**](https://huggingface.co/datasets/wi-lab/lwm/tree/main).
+   - `[6]`: Selects the 6th scenario, representing a specific wireless environment and base station configuration. In this case, Scenario 6 corresponds to channels of size (16, 32) between BS 3 and users in the densified **Miami** scenario. The dataset is available at [**Hugging Face Datasets**](https://huggingface.co/datasets/wi-lab/lwm/tree/main).
 
 ---
 

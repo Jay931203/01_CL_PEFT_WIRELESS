@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader, TensorDataset
 from utils import visualize_embeddings
 from tqdm import tqdm
 import warnings
+
 warnings.filterwarnings('ignore')
 #%%
 def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64, visualization=False, labels=None, visualization_method="t-sne"):

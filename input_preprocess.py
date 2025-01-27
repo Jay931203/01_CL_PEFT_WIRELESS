@@ -171,11 +171,13 @@ def tokenizer(selected_scenario_names,
               MAX_LEN=513, 
               masking_percent=.40, 
               mask=False, 
+              manual_data=None,
               seed=42,
               snr=None):
 
     patches, labels, raw_chs = patch_gen(
-        selected_scenario_names=selected_scenario_names, 
+        selected_scenario_names=selected_scenario_names,
+        manual_data=None,
         bs_idxs=bs_idxs,
         load_data=load_data,
         task=task,

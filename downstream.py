@@ -33,7 +33,8 @@ preprocessed_data, labels, raw_chs = tokenizer(
     bs_idxs=[3], 
     load_data=False, 
     task=task, 
-    n_beams=n_beams)
+    n_beams=n_beams,
+    manual_data=None)
 #%% LOAD THE MODEL
 gpu_ids = [0]
 device = torch.device("cuda:0")

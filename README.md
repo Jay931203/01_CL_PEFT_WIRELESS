@@ -2,7 +2,7 @@
 tags:
 - transformers
 - wireless-communication
-- zero-shot-classification
+- few-shot-learning
 - limited-data
 - feature-extraction
 - pytorch

@@ -264,7 +264,7 @@ class FineTuningWrapper(nn.Module):
             embeddings, attn_maps = self.model(x)  # Get embeddings from the base model
             if input_type == "cls_emb":
                 task_input = embeddings[:, 0, :]  # CLS token
-            elif input_type == "chs_emb":
+            elif input_type == "channel_emb":
                 chs_emb = embeddings[:, 1:, :]
                 task_input = chs_emb.view(chs_emb.size(0), -1) # embeddings.mean(dim=1)  # Mean pooling over channel embeddings
 

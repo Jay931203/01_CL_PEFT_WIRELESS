@@ -73,7 +73,7 @@ For example, the following figure demonstrates the advantages of using **LWM 1.1
 
 ### **Comparison of LWM Versions**  
 
-| Feature                     | LWM-v1.0                | **LWM-v1.1**          |  
+| Feature                     | LWM 1.0                | **LWM 1.1**          |  
 |-----------------------------|-------------------------|-----------------------|  
 | Channel Size Limitation     | Fixed at (32, 32)       | **Supports multiple (N, SC) pairs**  |  
 | Pre-training Samples        | 820K                    | **1.05M**              |  
@@ -81,6 +81,8 @@ For example, the following figure demonstrates the advantages of using **LWM 1.1
 | Masking Ratio               | 15%                     | **40%**               |  
 | Parameters                  | 600K                    | **2.5M**              |  
 | Sequence Length Support     | 128                     | **512**               |
+
+---
 
 # **Detailed Changes in LWM-v1.1**
 

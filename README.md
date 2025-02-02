@@ -45,7 +45,7 @@ For example, the following figure demonstrates the advantages of using **LWM-bas
 </p>
 
 <p align="center">
-  <sub><strong>Figure:</strong> This figure shows the F1-score comparison of models trained with wireless channels and their LWM embeddings for LoS/NLoS classification. CLS embeddings are 32× smaller than raw channels, while channel embeddings are 4× larger. Three embedding types are considered: (i) pre-trained LWM embeddings, (ii) embeddings of imperfect raw channels, and (iii) task-specific embeddings from a fine-tuned LWM.</sub>
+  <sub><strong>Figure:</strong> This figure shows the F1-score comparison of models trained with wireless channels and their LWM embeddings for LoS/NLoS classification </sub>
 </p>
 
 ---

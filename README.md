@@ -98,6 +98,9 @@ Generalization is a critical aspect of any foundation model. In **LWM 1.1**, we 
 
 Additionally, we introduced **channels from multiple base stations** in each scenario, with distinct (N, SC) pairs to ensure the model encounters a broad range of channel characteristics. This expansion resulted in a total of **1.3 million pre-training samples**, with 20% allocated for validation. This diversity mirrors the variability found in real-world deployments, such as urban, suburban, and rural environments. By exposing LWM 1.1 to this diversity, the model gains the ability to generalize across environments with distinct propagation characteristics, making it more reliable and versatile.
 
+For the full list of pretraining scenarios and specifications, visit:  
+[**LWM 1.1 Training Scenarios**](https://lwm-wireless.net/models/LWM1.0/small/model-training)
+
 ### **Fine-Tuning for Task-Specific Embedding Generation**  
 While pretraining provides a robust feature extractor, downstream tasks often require tailored embeddings. In **LWM 1.1**, we introduced **fine-tuning options** that give users the flexibility to customize the model for specific tasks. Users can now **freeze specific layers** of the model, allowing the remaining layers to adapt to task-specific requirements. This feature is particularly valuable for tasks prone to overfitting, such as **LoS/NLoS classification**, where excessive training on all layers can lead to suboptimal generalization.
 

@@ -16,21 +16,21 @@ base_model:
 
 **[🚀 Click here to try the Interactive Demo Based on LWM-v1.0!](https://huggingface.co/spaces/wi-lab/lwm-interactive-demo)**
 
-LWM-v1.1 is a powerful **pre-trained** model developed as a **universal feature extractor** for wireless channels. Building on the foundation of LWM-v1.0, this enhanced version incorporates key advancements to handle **diverse channel configurations**, improve **generalization**, and process **larger, more complex datasets**. As a state-of-the-art foundation model, LWM-v1.1 leverages transformers to extract refined representations from simulated datasets like DeepMIMO and real-world wireless data.
+LWM 1.1 is an **updated pre-trained model** designed for **feature extraction** in wireless channels. Extending LWM 1.0, this version introduces key modifications to improve **scalability**, **generalization**, and **efficiency** across diverse channel configurations. The model is pre-trained on an expanded dataset covering multiple **(N, SC) pairs**, ensuring robustness to varying antenna and subcarrier configurations. LWM 1.1 retains its transformer-based architecture and **Masked Channel Modeling (MCM)** pretraining approach, enabling it to learn structured representations from both **simulated (e.g., DeepMIMO) and real-world** wireless channels. The model supports variable-length inputs, incorporates **bucket-based batching** for memory efficiency, and enables fine-tuning for task-specific adaptation.
 
-### **How is LWM-v1.1 built?**
+### **How is LWM 1.1 built?**  
 
-The LWM-v1.1 architecture is built on transformers, designed to capture **dependencies** in wireless channel data. The model employs an updated version of **Masked Channel Modeling (MCM)**, increasing the masking ratio to make pretraining more challenging and effective. With **2D patch segmentation**, the model learns intricate relationships across both antennas and subcarriers, while **bucket-based batching** ensures efficient processing of variable-sized inputs. These enhancements make LWM-v1.1 highly scalable and adaptable, offering robust embeddings for diverse scenarios.
+LWM 1.1 is a **transformer-based architecture** designed to model **spatial and frequency dependencies** in wireless channel data. It utilizes an enhanced **Masked Channel Modeling (MCM)** pretraining approach, with an increased masking ratio to improve feature learning and generalization. The introduction of **2D patch segmentation** allows the model to jointly process spatial (antenna) and frequency (subcarrier) relationships, providing a more structured representation of the channel. Additionally, **bucket-based batching** is employed to efficiently handle variable-sized inputs without excessive padding, ensuring memory-efficient training and inference. These modifications enable LWM 1.1 to extract meaningful embeddings from a wide range of wireless scenarios, improving its applicability across different system configurations.
 
-### **What does LWM-v1.1 offer?**
+### **What does LWM 1.1 offer?**  
 
-LWM-v1.1 provides a versatile feature extraction framework for wireless communication and sensing tasks. Pretrained on a larger and more diverse dataset, it generalizes well across environments—from dense urban cities to synthetic setups—capturing channel characteristics that facilitate reliable performance. With increased capacity and optimized pretraining, LWM-v1.1 embeddings are even more refined, enabling improved results across downstream applications.
+LWM 1.1 serves as a **general-purpose feature extractor** for wireless communication and sensing tasks. Pretrained on an expanded and more diverse dataset, it effectively captures channel characteristics across various environments, including **dense urban areas, simulated settings, and real-world deployments**. The model's increased capacity and optimized pretraining strategy improve the quality of extracted representations, enhancing its applicability for downstream tasks.  
 
-### **How is LWM-v1.1 used?**
+### **How is LWM 1.1 used?**  
 
-LWM-v1.1 is designed to be seamlessly integrated into downstream tasks as a source of high-quality **embeddings**. By feeding raw wireless channel data into the model, users obtain contextualized representations that capture critical spatial relationships and dependencies. These embeddings enable efficient and accurate performance with limited labeled data.
+LWM 1.1 is designed for seamless integration into **wireless communication pipelines** as a pre-trained **embedding extractor**. By processing raw channel data, the model generates structured representations that encode **spatial, frequency, and propagation characteristics**. These embeddings can be directly used for downstream tasks, reducing the need for extensive labeled data while improving model efficiency and generalization across different system configurations.
 
-### **Advantages of Using LWM-v1.1**
+### **Advantages of Using LWM 1.1**
 
 - **Enhanced Flexibility**: Handles diverse channel configurations with no size limitations.
 - **Refined Embeddings**: Improved feature extraction through advanced pretraining and increased model capacity.
@@ -38,7 +38,7 @@ LWM-v1.1 is designed to be seamlessly integrated into downstream tasks as a sour
 - **Broad Generalization**: Trained on a larger, more diverse dataset for reliable performance across environments.
 - **Task Adaptability**: Fine-tuning options enable seamless integration into a wide range of applications.
 
-For example, the following figure demonstrates the advantages of using **LWM-v1.1-based highly compact CLS embeddings** and **high-dimensional channel embeddings** over raw channels for the LoS/NLoS classification task. The raw dataset is derived from channels of size (128, 32) between BS 3 and 8,299 users in the densified Denver scenario of the DeepMIMO dataset.
+For example, the following figure demonstrates the advantages of using **LWM 1.1-based highly compact CLS embeddings** and **high-dimensional channel embeddings** over raw channels for the LoS/NLoS classification task. The raw dataset is derived from channels of size (128, 32) between BS 3 and 8,299 users in the densified Denver scenario of the DeepMIMO dataset.
 
 <p align="center">
   <img src="https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/los_perf.png" alt="LoS/NLoS Classification Performance" width="600"/>
@@ -50,33 +50,36 @@ For example, the following figure demonstrates the advantages of using **LWM-v1.
 
 ---
 
-# **🧩 Puzzle Pieces that Redefine LWM-v1.0**
+# **Key Improvements in LWM-v1.1**  
 
-#### **1️⃣ Breaking Barriers**
-🔓 No Channel Size Limitation  
-📏 Support for Larger Input Sizes  
+### **1️⃣ Expanded Input Flexibility**  
+- **Removed Fixed Channel Size Constraints**: Supports multiple **(N, SC)** configurations instead of being restricted to (32, 32).  
+- **Increased Sequence Length**: Extended from **128 to 512**, allowing the model to process larger input dimensions efficiently.  
 
-#### **2️⃣ Smarter Foundations**
-🌍 A More Diverse Dataset  
-🎭 Tougher Masking Challenges with 40% MCM Ratio  
+### **2️⃣ Enhanced Dataset and Pretraining**  
+- **Broader Dataset Coverage**: Increased the number of training scenarios from **15 to 140**, improving generalization across environments.  
+- **Higher Masking Ratio in MCM**: Increased from **15% to 40%**, making the **Masked Channel Modeling (MCM)** task more challenging and effective for feature extraction.  
+- **Larger Pretraining Dataset**: Expanded from **820K to 1.05M** samples for more robust representation learning.  
 
-#### **3️⃣ Amplified Power**
-🔢 Expanded Capacity: 2.5M Parameters  
-📐 Realistic 2D Patch Segmentation  
+### **3️⃣ Improved Model Architecture**  
+- **Increased Model Capacity**: Parameter count expanded from **600K to 2.5M**, enhancing representational power.  
+- **2D Patch Segmentation**: Instead of segmenting channels along a single dimension (antennas or subcarriers), patches now span **both antennas and subcarriers**, improving spatial-frequency feature learning.  
 
-#### **4️⃣ Efficiency Engineered**
-⚙️ Optimized Training with AdamW + Cosine Decay  
-⚡ Faster Computation with Streamlined Attention Heads  
+### **4️⃣ Optimized Training and Efficiency**  
+- **Adaptive Learning Rate Schedule**: Implemented **AdamW with Cosine Decay**, improving convergence stability.  
+- **Computational Efficiency**: Reduced the number of attention heads per layer from **12 to 8**, balancing computational cost with feature extraction capability.  
 
-### **🌀 See the Difference at a Glance**
+---
 
-| Feature                     | LWM-v1.0                | **LWM-v1.1**          |
-|-----------------------------|-------------------------|-----------------------|
-| Channel Size Limitation     | Fixed at (32, 32)       | **Dynamic**           |
-| Pre-training Samples        | 820K                    | **1.05M**              |
-| Pre-training Scenarios      | 15                      | **140**                |
-| Masking Ratio               | 15%                     | **40%**               |
-| Parameters                  | 600K                    | **2.5M**              |
+### **Comparison of LWM Versions**  
+
+| Feature                     | LWM-v1.0                | **LWM-v1.1**          |  
+|-----------------------------|-------------------------|-----------------------|  
+| Channel Size Limitation     | Fixed at (32, 32)       | **Supports multiple (N, SC) pairs**  |  
+| Pre-training Samples        | 820K                    | **1.05M**              |  
+| Pre-training Scenarios      | 15                      | **140**                |  
+| Masking Ratio               | 15%                     | **40%**               |  
+| Parameters                  | 600K                    | **2.5M**              |  
 | Sequence Length Support     | 128                     | **512**               |
 
 # **Detailed Changes in LWM-v1.1**

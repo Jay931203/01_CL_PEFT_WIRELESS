@@ -45,7 +45,7 @@ For example, the following figure demonstrates the advantages of using **LWM-bas
 </p>
 
 <p align="center">
-  <sub><strong>Figure:</strong> This figure shows the F1-score comparison of models trained with wireless channels and their LWM embeddings for LoS/NLoS classification </sub>
+  <strong>Figure:</strong> This figure shows the F1-score comparison of models trained with wireless channels and their LWM embeddings for LoS/NLoS classification.
 </p>
 
 ---

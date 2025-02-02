@@ -17,7 +17,7 @@ base_model:
 **[🚀 Click here to try the Interactive Demo Based on LWM 1.0!](https://huggingface.co/spaces/wi-lab/lwm-interactive-demo)**
 
 LWM 1.1 is an **updated pre-trained model** designed for **feature extraction** in wireless channels. Extending LWM 1.0, this version introduces key modifications to improve **scalability**, **generalization**, and **efficiency** across diverse channel configurations. The model is pre-trained on an expanded dataset covering multiple **(N, SC) pairs**, ensuring robustness to varying antenna and subcarrier configurations. LWM 1.1 retains its transformer-based architecture and **Masked Channel Modeling (MCM)** pretraining approach, enabling it to learn structured representations from both **simulated (e.g., DeepMIMO) and real-world** wireless channels. The model supports variable-length inputs, incorporates **bucket-based batching** for memory efficiency, and enables fine-tuning for task-specific adaptation.
-
+ 
 ### **How is LWM 1.1 built?**  
 
 LWM 1.1 is a **transformer-based architecture** designed to model **spatial and frequency dependencies** in wireless channel data. It utilizes an enhanced **Masked Channel Modeling (MCM)** pretraining approach, with an increased masking ratio to improve feature learning and generalization. The introduction of **2D patch segmentation** allows the model to jointly process spatial (antenna) and frequency (subcarrier) relationships, providing a more structured representation of the channel. Additionally, **bucket-based batching** is employed to efficiently handle variable-sized inputs without excessive padding, ensuring memory-efficient training and inference. These modifications enable LWM 1.1 to extract meaningful embeddings from a wide range of wireless scenarios, improving its applicability across different system configurations.
@@ -38,14 +38,14 @@ LWM 1.1 is designed for seamless integration into **wireless communication pipel
 - **Broad Generalization**: Trained on a larger, more diverse dataset for reliable performance across environments.
 - **Task Adaptability**: Fine-tuning options enable seamless integration into a wide range of applications.
 
-For example, the following figure demonstrates the advantages of using **LWM 1.1-based highly compact CLS embeddings** and **high-dimensional channel embeddings** over raw channels for the LoS/NLoS classification task. The raw dataset is derived from channels of size (128, 32) between BS 3 and 8,299 users in the densified Denver scenario of the DeepMIMO dataset.
+For example, the following figure demonstrates the advantages of using **LWM-based highly compact CLS embeddings** and **high-dimensional channel embeddings** over raw channels for the LoS/NLoS classification task. The raw dataset is derived from channels of size (32, 32) between BS 3 and 8,299 users in the densified Denver scenario of the DeepMIMO dataset.
 
 <p align="center">
   <img src="https://huggingface.co/wi-lab/lwm-v1.1/resolve/main/images/los_perf.png" alt="LoS/NLoS Classification Performance" width="600"/>
 </p>
 
 <p align="center">
-  <strong>Figure:</strong> LoS/NLoS classification performance comparison
+  <strong>Figure:</strong> This figure shows the F1-score comparison of models trained with wireless channels and their LWM embeddings for LoS/NLoS classification. CLS embeddings are 32× smaller than raw channels, while channel embeddings are 4× larger. Three embedding types are considered: (i) pre-trained LWM embeddings, (ii) embeddings of imperfect raw channels, and (iii) taskspecific embeddings from a fine-tuned LWM.
 </p>
 
 ---

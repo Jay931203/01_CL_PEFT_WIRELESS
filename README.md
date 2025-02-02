@@ -84,57 +84,57 @@ For example, the following figure demonstrates the advantages of using **LWM 1.1
 
 ---
 
-# **Detailed Changes in LWM-v1.1**
+# **Detailed Changes in LWM 1.1**
 
 ### **No Channel Size Limitation**  
-In **LWM-v1.0**, the model was pre-trained on a single (N, SC) = (32, 32) pair, which limited its generalization to other channel configurations. Wireless communication systems in the real world exhibit vast variability in the number of antennas (N) at base stations and subcarriers (SC). To address this limitation, **LWM-v1.1** was pre-trained on **20 distinct (N, SC) pairs**, ranging from smaller setups like (8, 32) to more complex setups like (128, 64). This variety enables the model to effectively handle diverse channel configurations and ensures robust generalization without overfitting to specific configurations.
+In **LWM 1.0**, the model was pre-trained on a single (N, SC) = (32, 32) pair, which limited its generalization to other channel configurations. Wireless communication systems in the real world exhibit vast variability in the number of antennas (N) at base stations and subcarriers (SC). To address this limitation, **LWM 1.1** was pre-trained on **20 distinct (N, SC) pairs**, ranging from smaller setups like (8, 32) to more complex setups like (128, 64). This variety enables the model to effectively handle diverse channel configurations and ensures robust generalization without overfitting to specific configurations.
 
 To handle variable-sized inputs efficiently, we implemented **bucket-based batching**, where inputs of similar sizes are grouped together. For example, channels with sizes (32, 64) and (16, 128) are placed in the same bucket, avoiding the excessive padding common in traditional batching approaches. This not only saves memory but also ensures computational efficiency during training. Furthermore, validation samples were drawn as **20% of each bucket**, maintaining a balanced evaluation process across all input sizes.
 
-This approach eliminates the rigidity of fixed channel sizes and positions LWM-v1.1 as a versatile model capable of adapting to real-world wireless systems with varying configurations.
+This approach eliminates the rigidity of fixed channel sizes and positions LWM 1.1 as a versatile model capable of adapting to real-world wireless systems with varying configurations.
 
 ### **Larger and More Diverse Pretraining Dataset**  
-Generalization is a critical aspect of any foundation model. In **LWM-v1.1**, we significantly expanded the training dataset to cover more diverse scenarios and environments. We added **seven new city scenarios**—Charlotte, Denver, Oklahoma, Indianapolis, Fort Worth, Santa Clara, and San Diego—to enrich the model’s exposure to a variety of urban layouts. To enhance the spatial resolution of the training data, we reduced the grid spacing between user locations in the DeepMIMO city scenarios from **2.5m to 1m**, resulting in a higher density of user positions. This adjustment required re-performing ray tracing for all scenarios to generate high-resolution wireless channel data.
+Generalization is a critical aspect of any foundation model. In **LWM 1.1**, we significantly expanded the training dataset to cover more diverse scenarios and environments. We added **seven new city scenarios**—Charlotte, Denver, Oklahoma, Indianapolis, Fort Worth, Santa Clara, and San Diego—to enrich the model’s exposure to a variety of urban layouts. To enhance the spatial resolution of the training data, we reduced the grid spacing between user locations in the DeepMIMO city scenarios from **2.5m to 1m**, resulting in a higher density of user positions. This adjustment required re-performing ray tracing for all scenarios to generate high-resolution wireless channel data.
 
-Additionally, we introduced **channels from multiple base stations** in each scenario, with distinct (N, SC) pairs to ensure the model encounters a broad range of channel characteristics. This expansion resulted in a total of **1.3 million pre-training samples**, with 20% allocated for validation. This diversity mirrors the variability found in real-world deployments, such as urban, suburban, and rural environments. By exposing LWM-v1.1 to this diversity, the model gains the ability to generalize across environments with distinct propagation characteristics, making it more reliable and versatile.
+Additionally, we introduced **channels from multiple base stations** in each scenario, with distinct (N, SC) pairs to ensure the model encounters a broad range of channel characteristics. This expansion resulted in a total of **1.3 million pre-training samples**, with 20% allocated for validation. This diversity mirrors the variability found in real-world deployments, such as urban, suburban, and rural environments. By exposing LWM 1.1 to this diversity, the model gains the ability to generalize across environments with distinct propagation characteristics, making it more reliable and versatile.
 
 ### **Fine-Tuning for Task-Specific Embedding Generation**  
-While pretraining provides a robust feature extractor, downstream tasks often require tailored embeddings. In **LWM-v1.1**, we introduced **fine-tuning options** that give users the flexibility to customize the model for specific tasks. Users can now **freeze specific layers** of the model, allowing the remaining layers to adapt to task-specific requirements. This feature is particularly valuable for tasks prone to overfitting, such as **LoS/NLoS classification**, where excessive training on all layers can lead to suboptimal generalization.
+While pretraining provides a robust feature extractor, downstream tasks often require tailored embeddings. In **LWM 1.1**, we introduced **fine-tuning options** that give users the flexibility to customize the model for specific tasks. Users can now **freeze specific layers** of the model, allowing the remaining layers to adapt to task-specific requirements. This feature is particularly valuable for tasks prone to overfitting, such as **LoS/NLoS classification**, where excessive training on all layers can lead to suboptimal generalization.
 
 To further streamline task-specific adaptation, we provided **default classification and regression heads** for downstream tasks. Users can also define their own custom heads to suit unique requirements, ensuring maximum flexibility and adaptability.
 
 ### **Increased Model Capacity**  
-LWM-v1.1 significantly enhances the model's ability to extract complex features by increasing the **embedding size from 64 to 128**. This increase more than quadruples the model's parameter count, raising it from **600K to 2.5M**. The larger embedding size allows the model to represent more intricate relationships within channel data, improving its performance on challenging tasks such as **beam prediction** and **channel estimation**.
+LWM 1.1 significantly enhances the model's ability to extract complex features by increasing the **embedding size from 64 to 128**. This increase more than quadruples the model's parameter count, raising it from **600K to 2.5M**. The larger embedding size allows the model to represent more intricate relationships within channel data, improving its performance on challenging tasks such as **beam prediction** and **channel estimation**.
 
 This change directly impacts the quality of the embeddings, making them more expressive and robust across a variety of downstream tasks, even in scenarios with limited labeled data.
 
 ### **Challenging MCM Task with Higher Masking Ratio**  
-The **Masked Channel Modeling (MCM)** task lies at the core of LWM’s pretraining methodology. In **LWM-v1.1**, we made the task more challenging by increasing the **masking ratio from 15% to 40%**. This means that a larger portion of the channel data is masked during training, requiring the model to infer the missing information from contextual dependencies.
+The **Masked Channel Modeling (MCM)** task lies at the core of LWM’s pretraining methodology. In **LWM 1.1**, we made the task more challenging by increasing the **masking ratio from 15% to 40%**. This means that a larger portion of the channel data is masked during training, requiring the model to infer the missing information from contextual dependencies.
 
-This enhancement forces the model to rely on deeper spatial relationships between antennas and subcarriers, rather than learning superficial patterns. As a result, LWM-v1.1 produces embeddings that are more robust and better equipped to handle real-world scenarios with incomplete or noisy data.
+This enhancement forces the model to rely on deeper spatial relationships between antennas and subcarriers, rather than learning superficial patterns. As a result, LWM 1.1 produces embeddings that are more robust and better equipped to handle real-world scenarios with incomplete or noisy data.
 
 ### **Support for Larger Input Sizes**  
-Wireless communication systems are increasingly handling larger channels with higher dimensions. To accommodate these demands, we increased the **maximum sequence length** from **128 to 512** in **LWM-v1.1**. This change enables the model to process larger and more detailed channel data without modification, broadening its applicability to high-dimensional wireless tasks. This ensures that LWM-v1.1 remains relevant as the scale and complexity of wireless systems continue to grow.
+Wireless communication systems are increasingly handling larger channels with higher dimensions. To accommodate these demands, we increased the **maximum sequence length** from **128 to 512** in **LWM 1.1**. This change enables the model to process larger and more detailed channel data without modification, broadening its applicability to high-dimensional wireless tasks. This ensures that LWM-v1.1 remains relevant as the scale and complexity of wireless systems continue to grow.
 
 ### **2D Patch Segmentation for Realistic Learning**  
-In **LWM-v1.0**, patches were segmented based on a single dimension, typically grouping elements from different subcarriers within the same antenna. In **LWM-v1.1**, we introduced **2D patch segmentation**, where patches now combine elements from both antennas and subcarriers. This reflects real-world wireless channel dependencies more accurately, as the relationship between antennas and subcarriers is critical in practical deployments.
+In **LWM 1.0**, patches were segmented based on a single dimension, typically grouping elements from different subcarriers within the same antenna. In **LWM 1.1**, we introduced **2D patch segmentation**, where patches now combine elements from both antennas and subcarriers. This reflects real-world wireless channel dependencies more accurately, as the relationship between antennas and subcarriers is critical in practical deployments.
 
-This multidimensional segmentation increases the complexity of the MCM task, requiring the model to learn deeper and more meaningful dependencies within the data. By better aligning the training methodology with real-world conditions, LWM-v1.1 further enhances its ability to generalize and perform in practical scenarios.
+This multidimensional segmentation increases the complexity of the MCM task, requiring the model to learn deeper and more meaningful dependencies within the data. By better aligning the training methodology with real-world conditions, LWM 1.1 further enhances its ability to generalize and perform in practical scenarios.
 
 ### **Optimized Training Strategy**  
-Training large models requires carefully designed optimization techniques to ensure smooth convergence and generalization. In **LWM-v1.1**, we adopted the **AdamW optimizer**, which improves weight regularization and prevents overfitting compared to traditional Adam. The learning rate schedule was also refined, incorporating an **5-step warmup phase** followed by **cosine decay**. This strategy ensures that the model transitions smoothly from the initial training phase to convergence, maintaining stability and improving overall performance.
+Training large models requires carefully designed optimization techniques to ensure smooth convergence and generalization. In **LWM 1.1**, we adopted the **AdamW optimizer**, which improves weight regularization and prevents overfitting compared to traditional Adam. The learning rate schedule was also refined, incorporating an **5-step warmup phase** followed by **cosine decay**. This strategy ensures that the model transitions smoothly from the initial training phase to convergence, maintaining stability and improving overall performance.
 
 ### **Improved Computational Efficiency**  
-To balance computational efficiency with performance, we reduced the number of **attention heads per layer from 12 to 8** in **LWM-v1.1**. This reduction decreases the computational load during both training and inference, making the model more efficient without significantly affecting its ability to extract meaningful features. The streamlined architecture ensures that LWM-v1.1 is not only powerful but also practical for deployment in resource-constrained environments.
+To balance computational efficiency with performance, we reduced the number of **attention heads per layer from 12 to 8** in **LWM 1.1**. This reduction decreases the computational load during both training and inference, making the model more efficient without significantly affecting its ability to extract meaningful features. The streamlined architecture ensures that LWM 1.1 is not only powerful but also practical for deployment in resource-constrained environments.
 
 ### **Why These Changes Were Necessary**  
-The updates in LWM-v1.1 were driven by real-world demands for greater flexibility, scalability, and performance in wireless communication tasks. Removing channel size limitations and diversifying the dataset address the variability inherent in wireless environments. Increasing model capacity and enhancing the MCM task improve the quality of embeddings, while optimized training strategies and computational efficiency make the model practical for a wide range of applications. These changes make LWM-v1.1 a significant step forward, ensuring its relevance and impact in advancing wireless communication research.
+The updates in LWM 1.1 were driven by real-world demands for greater flexibility, scalability, and performance in wireless communication tasks. Removing channel size limitations and diversifying the dataset address the variability inherent in wireless environments. Increasing model capacity and enhancing the MCM task improve the quality of embeddings, while optimized training strategies and computational efficiency make the model practical for a wide range of applications. These changes make LWM 1.1 a significant step forward, ensuring its relevance and impact in advancing wireless communication research.
 
 ## **Conclusion**  
-**LWM-v1.1** represents a major leap forward in wireless communication modeling, offering robust scalability, increased generalization, and adaptability to a wide variety of tasks. From enriched training datasets and challenging pretraining objectives to enhanced model capacity and efficient input handling, LWM-v1.1 provides a powerful foundation for wireless communication research and applications.  
+**LWM 1.1** represents a major leap forward in wireless communication modeling, offering robust scalability, increased generalization, and adaptability to a wide variety of tasks. From enriched training datasets and challenging pretraining objectives to enhanced model capacity and efficient input handling, LWM 1.1 provides a powerful foundation for wireless communication research and applications.  
 
 ### **Try It Now!**  
-Explore **LWM-v1.1** on Hugging Face with preloaded datasets, fine-tuning options, and pretrained models to kickstart your projects.  
+Explore **LWM 1.1** on Hugging Face with preloaded datasets, fine-tuning options, and pretrained models to kickstart your projects.  
 [👉 Access the model here!](https://huggingface.co/wi-lab/lwm-v1.1/tree/main)
 
 ---
@@ -634,7 +634,7 @@ chs = lwm_inference(
 
 # **2. PRE-TRAINING LWM-v1.1**
 
-This section details the process of pre-training the **LWM-v1.1** model, including data preparation, model initialization, and optimization settings. Each step has been carefully designed to enable the model to learn robust and general-purpose embeddings for wireless channel data.
+This section details the process of pre-training the **LWM 1.1** model, including data preparation, model initialization, and optimization settings. Each step has been carefully designed to enable the model to learn robust and general-purpose embeddings for wireless channel data.
 
 ---
 
@@ -769,7 +769,7 @@ val_loaders = create_dataloader(val_data, batch_size=VAL_BATCH_SIZE, shuffle=Fal
 
 ### **Initializing the Model**
 
-Initialize **LWM-v1.1** and optionally load a pretrained checkpoint:
+Initialize **LWM 1.1** and optionally load a pretrained checkpoint:
 
 ```python
 load_model = True

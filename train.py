@@ -351,7 +351,7 @@ def finetune(
     # Set up the optimizer
     optimizer = torch.optim.Adam(wrapper.parameters(), **optimizer_config)
     # Set up the scheduler for learning rate decay
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=10, gamma=0.2)  # Example: Reduce LR by 10x every 10 epochs
+    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.8)  # Example: Reduce LR by 10x every 10 epochs
 
     # Set up the loss criterion
     if criterion is None:

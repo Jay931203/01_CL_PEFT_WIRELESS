@@ -420,7 +420,7 @@ def finetune(
             # Compute F1-score for classification tasks
             f1 = None
             if task_type == "classification":
-                f1 = f1_score(all_targets, all_preds, average="macro")
+                f1 = f1_score(all_targets, all_preds, average="weighted")
                 print(f"Epoch {epoch + 1}, Validation F1-Score: {f1:.4f}")
                 f1_scores.append(f1)
 

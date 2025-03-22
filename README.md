@@ -16,6 +16,8 @@ base_model:
 
 **[🚀 Click here to try the Interactive Demo Based on LWM 1.0!](https://huggingface.co/spaces/wi-lab/lwm-interactive-demo)**
 
+**[🚀 Click here to try the Colab Notebook!](https://drive.google.com/file/d/1uA4ua8xqdc5XUZjzqIK8fRp8FhYtTxKB/view?usp=sharing)**
+
 LWM 1.1 is an **updated pre-trained model** designed for **feature extraction** in wireless channels. Extending LWM 1.0, this version introduces key modifications to improve **scalability**, **generalization**, and **efficiency** across diverse channel configurations. The model is pre-trained on an expanded dataset covering multiple **(N, SC) pairs**, ensuring robustness to varying antenna and subcarrier configurations. LWM 1.1 retains its transformer-based architecture and **Masked Channel Modeling (MCM)** pretraining approach, enabling it to learn structured representations from both **simulated (e.g., DeepMIMO) and real-world** wireless channels. The model supports variable-length inputs, incorporates **bucket-based batching** for memory efficiency, and enables fine-tuning for task-specific adaptation.
  
 ### **How is LWM 1.1 built?**  

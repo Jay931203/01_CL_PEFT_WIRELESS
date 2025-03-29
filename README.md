@@ -78,7 +78,7 @@ For example, the following figure demonstrates the advantages of using **LWM-bas
 | Feature                     | LWM 1.0                | **LWM 1.1**          |  
 |-----------------------------|-------------------------|-----------------------|  
 | Channel Size Limitation     | Fixed at (32, 32)       | **Supports multiple (N, SC) pairs**  |  
-| Sequence Length Support     | 128                     | **512**               |
+| Sequence Length Support     | 128 (16-dimensional)    | **512 (32-dimensional)**               |
 | Pre-training Samples        | 820K                    | **1.05M**             |  
 | Pre-training Scenarios      | 15                      | **140**               |  
 | Masking Ratio               | 15%                     | **40%**               |  

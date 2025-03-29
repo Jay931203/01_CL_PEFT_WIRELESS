@@ -82,8 +82,9 @@ For example, the following figure demonstrates the advantages of using **LWM-bas
 | Pre-training Samples        | 820K                    | **1.05M**             |  
 | Pre-training Scenarios      | 15                      | **140**               |  
 | Masking Ratio               | 15%                     | **40%**               |  
-| Embedding size              | 64                   | **128**              | 
-| Parameters                  | 600K                    | **2.5M**              |  
+| Embedding size              | 64                      | **128**               | 
+| Number of Parameters        | 600K                    | **2.5M**              | 
+| Segmentation                | 1D                      | **2D**                |   
 
 ---
 

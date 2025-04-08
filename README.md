@@ -19,7 +19,56 @@ base_model:
 **[🚀 Click here to try the Colab Notebook!](https://colab.research.google.com/drive/1uA4ua8xqdc5XUZjzqIK8fRp8FhYtTxKB?authuser=1#scrollTo=4xPULSHkyWv1)**
 
 LWM 1.1 is an **updated pre-trained model** designed for **feature extraction** in wireless channels. Extending LWM 1.0, this version introduces key modifications to improve **scalability**, **generalization**, and **efficiency** across diverse channel configurations. The model is pre-trained on an expanded dataset covering multiple **(N, SC) pairs**, ensuring robustness to varying antenna and subcarrier configurations. LWM 1.1 retains its transformer-based architecture and **Masked Channel Modeling (MCM)** pretraining approach, enabling it to learn structured representations from both **simulated (e.g., DeepMIMO) and real-world** wireless channels. The model supports variable-length inputs, incorporates **bucket-based batching** for memory efficiency, and enables fine-tuning for task-specific adaptation.
- 
+
+<!--
+### 🎥 LWM Tutorial Series
+
+Explore LWM concepts and applications in this compact video series:
+
+<table>
+  <tr>
+    <td align="center">
+      <a href="https://www.youtube.com/watch?v=3sxJR86EFOo" target="_blank">
+        <img src="https://img.youtube.com/vi/3sxJR86EFOo/0.jpg" width="180"/>
+        <div style="margin-top:4px;padding:4px 12px;background:#f97316;color:white;border-radius:6px;font-weight:600;">▶ Watch</div>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://www.youtube.com/watch?v=Coqcya9NzFs" target="_blank">
+        <img src="https://img.youtube.com/vi/Coqcya9NzFs/0.jpg" width="180"/>
+        <div style="margin-top:4px;padding:4px 12px;background:#f97316;color:white;border-radius:6px;font-weight:600;">▶ Watch</div>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://www.youtube.com/watch?v=e9KvAXMUuQg" target="_blank">
+        <img src="https://img.youtube.com/vi/e9KvAXMUuQg/0.jpg" width="180"/>
+        <div style="margin-top:4px;padding:4px 12px;background:#f97316;color:white;border-radius:6px;font-weight:600;">▶ Watch</div>
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td align="center">
+      <a href="https://www.youtube.com/watch?v=ZB5WVvo6q6U" target="_blank">
+        <img src="https://img.youtube.com/vi/ZB5WVvo6q6U/0.jpg" width="180"/>
+        <div style="margin-top:4px;padding:4px 12px;background:#f97316;color:white;border-radius:6px;font-weight:600;">▶ Watch</div>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://www.youtube.com/watch?v=5oNnJjos0mo" target="_blank">
+        <img src="https://img.youtube.com/vi/5oNnJjos0mo/0.jpg" width="180"/>
+        <div style="margin-top:4px;padding:4px 12px;background:#f97316;color:white;border-radius:6px;font-weight:600;">▶ Watch</div>
+      </a>
+    </td>
+    <td align="center">
+      <a href="https://www.youtube.com/watch?v=_RObWck3MMw" target="_blank">
+        <img src="https://img.youtube.com/vi/_RObWck3MMw/0.jpg" width="180"/>
+        <div style="margin-top:4px;padding:4px 12px;background:#f97316;color:white;border-radius:6px;font-weight:600;">▶ Watch</div>
+      </a>
+    </td>
+  </tr>
+</table>
+-->
+
 ### **How is LWM 1.1 built?**  
 
 LWM 1.1 is a **transformer-based architecture** designed to model **spatial and frequency dependencies** in wireless channel data. It utilizes an enhanced **Masked Channel Modeling (MCM)** pretraining approach, with an increased masking ratio to improve feature learning and generalization. The introduction of **2D patch segmentation** allows the model to jointly process spatial (antenna) and frequency (subcarrier) relationships, providing a more structured representation of the channel. Additionally, **bucket-based batching** is employed to efficiently handle variable-sized inputs without excessive padding, ensuring memory-efficient training and inference. These modifications enable LWM 1.1 to extract meaningful embeddings from a wide range of wireless scenarios, improving its applicability across different system configurations.

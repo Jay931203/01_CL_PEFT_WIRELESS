@@ -21,7 +21,7 @@ base_model:
 LWM 1.1 is an **updated pre-trained model** designed for **feature extraction** in wireless channels. Extending LWM 1.0, this version introduces key modifications to improve **scalability**, **generalization**, and **efficiency** across diverse channel configurations. The model is pre-trained on an expanded dataset covering multiple **(N, SC) pairs**, ensuring robustness to varying antenna and subcarrier configurations. LWM 1.1 retains its transformer-based architecture and **Masked Channel Modeling (MCM)** pretraining approach, enabling it to learn structured representations from both **simulated (e.g., DeepMIMO) and real-world** wireless channels. The model supports variable-length inputs, incorporates **bucket-based batching** for memory efficiency, and enables fine-tuning for task-specific adaptation.
 
 <!--
-### 🎥 LWM Tutorial Series
+### LWM Tutorial Series
 
 Explore LWM concepts and applications in this compact video series:
 

@@ -1020,3 +1020,42 @@ def scenario_prop():
         'n_subcarriers': 64
     }}
     return row_column_users
+
+
+import subprocess
+import os
+# Function to clone a specific dataset scenario folder
+def clone_dataset_scenario(scenario_name, repo_url, model_repo_dir="./LWM", scenarios_dir="scenarios"):
+    current_dir = os.path.basename(os.getcwd())
+    if current_dir == "LWM":
+        model_repo_dir = "."
+
+    # Create the scenarios directory if it doesn't exist
+    scenarios_path = os.path.join(model_repo_dir, scenarios_dir)
+    if not os.path.exists(scenarios_path):
+        os.makedirs(scenarios_path)
+
+    scenario_path = os.path.join(scenarios_path, scenario_name)
+
+    # Initialize sparse checkout for the dataset repository
+    if not os.path.exists(os.path.join(scenarios_path, ".git")):
+        print(f"Initializing sparse checkout in {scenarios_path}...")
+        subprocess.run(["git", "clone", "--sparse", repo_url, "."], cwd=scenarios_path, check=True)
+        subprocess.run(["git", "sparse-checkout", "init", "--cone"], cwd=scenarios_path, check=True)
+        subprocess.run(["git", "lfs", "install"], cwd=scenarios_path, check=True)  # Install Git LFS if needed
+
+    # Add the requested scenario folder to sparse checkout
+    print(f"Adding {scenario_name} to sparse checkout...")
+    subprocess.run(["git", "sparse-checkout", "add", scenario_name], cwd=scenarios_path, check=True)
+
+    # Pull large files if needed (using Git LFS)
+    subprocess.run(["git", "lfs", "pull"], cwd=scenarios_path, check=True)
+
+    print(f"Successfully cloned {scenario_name} into {scenarios_path}.")
+
+
+def clone_dataset_scenarios(selected_scenario_names, dataset_repo_url, model_repo_dir):
+    for scenario_name in selected_scenario_names:
+        clone_dataset_scenario(scenario_name, dataset_repo_url, model_repo_dir)
+
+

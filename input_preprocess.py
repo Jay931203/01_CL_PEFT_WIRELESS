@@ -464,7 +464,12 @@ def label_gen(task, data, scenario, n_beams=64):
                       cbar_title='Best beam index')
         
         label = best_beams[idxs]
-        
+
+    ## No Baseline, Intended Modification for Channel Reconstruction
+    elif task == 'Channel Reconstruction':
+        channels = data['user']['channel']  # 리스트 형태: len = n_users
+        label = np.array(channels)  # shape: [n_users, n_tx, n_rx, n_delay]
+
     return label.astype(int)
 #%%
 def steering_vec(array, phi=0, theta=0, kd=np.pi):

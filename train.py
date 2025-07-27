@@ -163,19 +163,19 @@ class CustomClassificationHead(nn.Module):
         
         super().__init__()
         self.classifier = nn.Sequential(
-            nn.Linear(input_dim, 512),  
-            nn.BatchNorm1d(512),       
-            nn.ReLU(),                 
-            nn.Dropout(0.1),           
-            nn.Linear(512, 256),       
-            nn.BatchNorm1d(256),       
-            nn.ReLU(),                 
-            nn.Dropout(0.1),           
-            nn.Linear(256, 128),       
-            nn.BatchNorm1d(128),       
+            # nn.Linear(input_dim, 512),
+            # nn.BatchNorm1d(512),
+            # nn.ReLU(),
+            # nn.Dropout(0.1),
+            # nn.Linear(input_dim, 256),
+            # nn.BatchNorm1d(256),
+            # nn.ReLU(),
+            # nn.Dropout(0.1),
+            nn.Linear(input_dim, 64),
+            nn.BatchNorm1d(64),
             nn.ReLU(),                 
             # nn.Dropout(0.1),           
-            nn.Linear(128, num_classes) 
+            nn.Linear(64, num_classes)
         )
 
     def forward(self, x):
@@ -190,11 +190,11 @@ class CustomRegressionHead(nn.Module):
             nn.BatchNorm1d(512),      
             nn.ReLU(),                
             nn.Dropout(0.1),          
-            nn.Linear(512, 256),     
-            nn.BatchNorm1d(256),     
-            nn.ReLU(),                 
-            nn.Dropout(0.1),          
-            nn.Linear(256, output_dim)      
+            nn.Linear(512, output_dim)
+            # nn.BatchNorm1d(256),
+            # nn.ReLU(),
+            # nn.Dropout(0.1),
+            # nn.Linear(256, output_dim)
         )
 
     def forward(self, x):
@@ -358,7 +358,7 @@ def finetune(
         criterion = nn.CrossEntropyLoss() if task_type == "classification" else nn.MSELoss()
 
     scaler = GradScaler()
-    train_losses, val_losses, f1_scores = [], [], []
+    train_losses, val_losses, Accuracy = [], [], []
     best_val_loss = float("inf")
     best_model_path = None
 
@@ -422,7 +422,15 @@ def finetune(
             if task_type == "classification":
                 f1 = f1_score(all_targets, all_preds, average="weighted")
                 print(f"Epoch {epoch + 1}, Validation F1-Score: {f1:.4f}")
-                f1_scores.append(f1)
+                Accuracy.append(f1)
+            elif task_type == "regression":
+                preds = outputs.detach().cpu()
+                trues = targets.detach().cpu()
+                mse = torch.sum((preds - trues) ** 2, dim=-1)
+                power = torch.sum(trues ** 2, dim=-1)
+                nmse = torch.mean(mse / (power + 1e-10)).item()
+                print(f"Epoch {epoch + 1}, Validation NMSE: {nmse:.6f}")
+                Accuracy.append(nmse)
 
         scheduler.step()
 
@@ -443,4 +451,4 @@ def finetune(
     # plt.savefig(os.path.join(results_folder, "loss_curve.png"))
     plt.show()
 
-    return wrapper, best_model_path, train_losses, val_losses, f1_scores if task_type == "classification" else 0, attn_maps
+    return wrapper, best_model_path, train_losses, val_losses, Accuracy, attn_maps

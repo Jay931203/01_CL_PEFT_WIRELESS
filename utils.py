@@ -35,7 +35,7 @@ from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 import umap
 
-def visualize_embeddings(embeddings, labels, method="pca", label=None):
+def visualize_embeddings(embeddings, labels, task ='LoS/NLoS Classification', method="pca", label=None):
     """
     Visualize embeddings using PCA, UMAP, or t-SNE with color-coded labels.
 
@@ -63,18 +63,22 @@ def visualize_embeddings(embeddings, labels, method="pca", label=None):
 
     reduced_embeddings = reducer.fit_transform(embeddings)
 
-    # Create a scatter plot with color-coding based on labels
     plt.figure(figsize=(10, 8))
-    num_classes = len(np.unique(labels))
-    colors = plt.cm.get_cmap("tab10", num_classes)
+    print(labels.shape)
+    if (task != 'Channel Reconstruction' and task != 'Embedding Regression'):
+        # Create a scatter plot with color-coding based on labels
+        num_classes = len(np.unique(labels))
+        colors = plt.cm.get_cmap("tab10", num_classes)
 
-    for class_idx in range(num_classes):
-        class_points = reduced_embeddings[labels == class_idx]
-        plt.scatter(
-            class_points[:, 0], class_points[:, 1],
-            label=f"Class {class_idx}",
-            alpha=0.6
-        )
+        for class_idx in range(num_classes):
+            class_points = reduced_embeddings[labels == class_idx]
+            plt.scatter(
+                class_points[:, 0], class_points[:, 1],
+                label=f"Class {class_idx}",
+                alpha=0.6
+            )
+    else:
+        plt.scatter(reduced_embeddings[:, 0], reduced_embeddings[:, 1], alpha=0.6)
 
     # Customize the plot
     plt.title(f"{label} ({method.upper()})")

@@ -134,6 +134,7 @@ class lwm(nn.Module):
         return model
 
     def forward(self, input_ids, masked_pos=None):
+        #print(f"[LWM] Forward called. masked_pos = {masked_pos is not None}")
         # Step 1: Embedding
         output = self.embedding(input_ids)
         attention_maps = []
@@ -144,11 +145,20 @@ class lwm(nn.Module):
             attention_maps.append(attn)
 
         # If masked_pos is provided, perform masked token prediction
+        # (HJ) from masked_pos to mask style(from masked only decoding to all embedding decoding)
         if masked_pos is not None:
-            masked_pos = masked_pos.long()[:, :, None].expand(-1, -1, output.size(-1))
-            h_masked = torch.gather(output, 1, masked_pos)
-            h_masked = self.norm(F.relu(self.linear(h_masked))) 
-            logits_lm = self.decoder(h_masked) + self.decoder_bias
+            #print(output.shape)
+            #print("[LWM] Decoder will be used.")
+            h_all = self.norm(F.relu(self.linear(output[:, :, :])))
+            logits_lm = self.decoder(h_all) + self.decoder_bias  # [B, 32, dim]
             return logits_lm, output, attention_maps
+        # if masked_pos is not None:
+        #     print("[LWM] Decoder will be used.")
+        #     masked_pos = masked_pos.long()[:, :, None].expand(-1, -1, output.size(-1))
+        #     h_masked = torch.gather(output, 1, masked_pos)
+        #     h_masked = self.norm(F.relu(self.linear(h_masked)))
+        #     logits_lm = self.decoder(h_masked) + self.decoder_bias
+        #     return logits_lm, output, attention_maps
         else:
+            #print("[LWM] Decoder will NOT be used. Returning encoder output only.")
             return output, attention_maps

@@ -1,0 +1,4 @@
+Task,Input,Epoch,Train Loss,Validation Loss,F1-Score (Classification),Learning Rate,Time
+Channel Reconstruction,cls_emb,1,811.5450060045397,752.0189218326491,-,0.001,1753605940
+Channel Reconstruction,cls_emb,2,785.1145819586676,746.0141302614796,-,0.001,1753605999
+Channel Reconstruction,cls_emb,3,778.6603690482475,725.3456572448315,-,0.001,1753606054

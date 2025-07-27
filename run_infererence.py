@@ -5,6 +5,7 @@ from utils import prepare_loaders
 from train import finetune
 from lwm_model import lwm
 
+import sys
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
@@ -20,21 +21,15 @@ from torch.utils.data import DataLoader, TensorDataset
 from torch.utils.data import TensorDataset, DataLoader
 from sklearn.model_selection import train_test_split
 
-# 0_2 Added Function
-def compute_nmse(pred, target):
-    mse = torch.sum((pred - target) ** 2, dim=(-1, -2))  # sum over S and D
-    power = torch.sum(target ** 2, dim=(-1, -2))          # sum over S and D
-    nmse = torch.mean(mse / (power + 1e-10))              # avoid division by zero
-    return nmse.item()
-
 # 0_2 Parameter Setting
 n_beams = 4  # Beam Prediction일 경우 사용
-task = ['Beam Prediction', 'LoS/NLoS Classification', 'Channel Reconstruction'][0]  # Default: LoS/NLoS Classification
+task = ['Beam Prediction', 'LoS/NLoS Classification', 'Channel Reconstruction', 'Embedding Regression'][3]  # Default: LoS/NLoS Classification
 task_type = ["classification", "regression"][1]  # Default: Classification
 visualization_method = ["pca", "umap", "tsne"][2]  # Default: TSNE
-input_types = ["cls_emb", "channel_emb", "raw"]  # Supported input types
-train_ratios = [.2]  # Fraction of data for training [.001, .01, .05, .1, .25, .5, .8]
+input_types = ["channel_emb", "raw"]  # Supported input types: + cls_emb
+train_ratios = [.5]  # Fraction of data for training [.001, .01, .05, .1, .25, .5, .8]
 fine_tuning_status = [None]  # Fine-tuning configurations [None, ["layers.8", "layers.9", "layers.10", "layers.11"], "full"]
+test_type = ["backbone", "full"][0]
 
 # 0_3 Scenarios Setting
 all_scenarios = scenarios_list()
@@ -43,7 +38,7 @@ selected_scenario_names = [all_scenarios[6]]  # 예: city_6_miami
 print(f"Selected Scenario: {selected_scenario_names[0]}")
 
 # 0_4 Tokenizer(Pre-processing)
-mask=False
+mask=True
 
 preprocessed_data, labels, raw_chs = tokenizer(
     selected_scenario_names,
@@ -51,15 +46,15 @@ preprocessed_data, labels, raw_chs = tokenizer(
     load_data=True,       # 이미 있으면 True, 처음 실행이면 False
     task=task,
     n_beams = n_beams,
-    mask=False,
-    masking_percent = 0.30
+    mask=mask,
+    masking_percent = 0.40
 )
 if isinstance(preprocessed_data, dict):
     all_samples = [torch.tensor(sample[0], dtype=torch.float32)
                    for samples in preprocessed_data.values()
                    for sample in samples]
     preprocessed_data = torch.stack(all_samples, dim=0)  # [N, 33, 32]
-
+    print("✅ Model Structure Re-Arranged.")
 
 # Step 1: LWM Load
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -71,20 +66,28 @@ clean_state_dict = {k.replace("module.", ""): v for k, v in state_dict.items()}
 model.load_state_dict(clean_state_dict)
 print("✅ Model loaded successfully.")
 
-subset_data = preprocessed_data[:]
-subset_labels = labels[:]
-#Step 2: Inference ---------
+subset_data = preprocessed_data[:1000]
+subset_labels = labels[:1000]
+# #Step 2: Inference ---------
 chs = lwm_inference(
     model,
     subset_data,
     input_type= input_types[0],
     device=device,
+    task=task,
+    task_type=task_type,
     batch_size=128,
     visualization=True,
+    test_type = test_type,
+    mask=mask,
     labels=subset_labels,
     visualization_method=visualization_method
 )
 print("✅ Inference Done")
+
+# if task == 'Embedding Regression':
+#     print("✅ No Fine-tuning. !!!!!TEST-DONE!!!!!")
+#     sys.exit(1)
 
 # Step 3: Proposed Fine-tuning
 results = np.zeros((len(fine_tuning_status), len(input_types), len(train_ratios)))
@@ -130,7 +133,7 @@ for fine_tuning_stat_idx, fine_tuning_stat in enumerate(fine_tuning_status):
 
 # Step 3_1: Proposed Fine-Tuning Results
 markers = ['o', 's', 'D']
-labels = ['CLS Emb', 'CHS Emb', 'Raw']
+labels = ['CHS Emb', 'Raw']
 fine_tuning_status_labels = []
 line_styles = []
 if None in fine_tuning_status:
@@ -168,6 +171,9 @@ plt.yticks(fontsize=17)
 plt.tight_layout()
 plt.show()
 
+
+test_type = ["backbone", "full"][1]
+
 # 3_2:Comparing the Raw Space with Fine-Tuned Embedding Space
 chs = lwm_inference(
     fine_tuned_model.model,
@@ -175,6 +181,9 @@ chs = lwm_inference(
     input_type="cls_emb",
     device=device,
     batch_size=64,
+    task=task,
+    task_type=task_type,
+    test_type=test_type[1],
     visualization=True,
     labels=subset_labels,
     visualization_method=visualization_method

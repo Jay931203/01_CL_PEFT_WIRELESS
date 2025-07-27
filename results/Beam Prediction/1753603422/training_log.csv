@@ -1,0 +1,4 @@
+Task,Input,Epoch,Train Loss,Validation Loss,F1-Score (Classification),Learning Rate,Time
+Beam Prediction,raw,1,793.2910758353569,710.758098368742,-,0.001,1753603423
+Beam Prediction,raw,2,730.1339119576119,677.2838397382878,-,0.001,1753603424
+Beam Prediction,raw,3,692.9165377230257,642.3489739035263,-,0.001,1753603425

@@ -10,6 +10,8 @@ channels for the Transformer-based LWM model.
 """
 import numpy as np
 import os
+
+from fontTools.pens.basePen import NullPen
 from tqdm import tqdm
 import time
 import pickle
@@ -156,14 +158,13 @@ def patch_gen(N_ROWS=4, N_COLUMNS=4, selected_scenario_names=None,
         raw_chs = torch.tensor(cleaned_deepmimo_data[0]).squeeze(1)
         raw_chs = raw_chs.view(raw_chs.size(0), -1)
         raw_chs = torch.hstack((raw_chs.real, raw_chs.imag))
-        
-        if task:
-            labels = [label_gen(task, deepmimo_data[scenario_idx], selected_scenario_names[scenario_idx], n_beams=n_beams) for scenario_idx in range(len(deepmimo_data))]
-            return patches, torch.tensor(labels[0]), raw_chs.view(raw_chs.size(0), -1)
-        else:
-            return patches, raw_chs.view(raw_chs.size(0), -1)
+
+        labels = [label_gen(task, deepmimo_data[scenario_idx], selected_scenario_names[scenario_idx], n_beams=n_beams)
+                  for scenario_idx in range(len(deepmimo_data))]
+        return patches, torch.tensor(labels[0]), raw_chs.view(raw_chs.size(0), -1)
+
 #%%
-def tokenizer(selected_scenario_names, 
+def tokenizer(selected_scenario_names,
               bs_idxs=[1,2,3], 
               load_data=False, 
               task="LoS/NLoS Classification", 
@@ -203,23 +204,37 @@ def tokenizer(selected_scenario_names,
         sample = make_sample(
             user_idx, patches, word2id, n_patches, n_masks_half, patch_size, MAX_LEN, mask=mask, seed=seed
         )
-        
+
+        sample_nomask = make_sample(
+            user_idx, patches, word2id, n_patches, n_masks_half, patch_size, MAX_LEN, mask=False, seed=seed
+        )
+
         if mask:
             seq_length = len(sample[0]) 
             grouped_data[seq_length].append(sample)
+            grouped_data_2.append(sample_nomask)
         else:
             grouped_data_2.append(sample)
     
     if mask:
         # Normalize keys to 0, 1, 2, ...
         normalized_grouped_data = {i: grouped_data[key] for i, key in enumerate(sorted(grouped_data.keys()))}
-    else: 
+        normalized_grouped_data2 = torch.stack(grouped_data_2, dim=0)
+    else:
         normalized_grouped_data = torch.stack(grouped_data_2, dim=0)
         # normalized_grouped_data = grouped_data_2
         if snr is not None:
             normalized_grouped_data += generate_gaussian_noise(normalized_grouped_data, snr)
     # normalized_grouped_data = {i: grouped_data[key] for i, key in enumerate(sorted(grouped_data.keys()))}
-    
+
+    if task == 'Embedding Regression':
+        if mask:
+            labels = normalized_grouped_data2[:, 1:, :]
+            print(f"[Embedding Regression] Tenser label(with Mask). Shape = {labels.shape}")
+        else:
+            labels = normalized_grouped_data
+            print(f"[Embedding Regression] Tensor label. Shape = {labels.shape}")
+
     return normalized_grouped_data, labels, raw_chs
 #%% REMOVE ZERO CHANNELS AND SCALE
 def deepmimo_data_cleaning(deepmimo_data):
@@ -468,7 +483,12 @@ def label_gen(task, data, scenario, n_beams=64):
     ## No Baseline, Intended Modification for Channel Reconstruction
     elif task == 'Channel Reconstruction':
         channels = data['user']['channel']  # 리스트 형태: len = n_users
-        label = np.array(channels)  # shape: [n_users, n_tx, n_rx, n_delay]
+        label = np.array(channels)
+
+    elif task == 'Embedding Regression':
+        channels = data['user']['channel']  # 리스트 형태: len = n_users
+        label = np.array(channels)
+
 
     return label.astype(int)
 #%%

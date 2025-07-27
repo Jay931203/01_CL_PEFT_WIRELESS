@@ -1,0 +1,2 @@
+Task,Input,Epoch,Train Loss,Validation Loss,F1-Score (Classification),Learning Rate,Time
+LoS/NLoS Classification,cls_emb,1,0.19122195146653964,0.47195446944755054,0.7846416522396225,0.001,1753598320

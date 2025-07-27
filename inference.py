@@ -11,10 +11,11 @@ from torch.utils.data import DataLoader, TensorDataset
 from utils import visualize_embeddings
 from tqdm import tqdm
 import warnings
+from sklearn.metrics import f1_score
 
 warnings.filterwarnings('ignore')
 #%%
-def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64, visualization=False, labels=None, visualization_method="t-sne"):
+def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64, visualization=False, task = 'LoS/NLoS Classification', mask= False, task_type = 'classification', test_type = 'backbone', labels=None, visualization_method="t-sne"):
     
     if input_type == "raw":
         output_total = data
@@ -27,10 +28,15 @@ def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64
         with torch.no_grad():
             with tqdm(dataloader, desc="Inference", unit="batch") as t:
                 for batch in t:
-                    
+
                     input_ids = batch[0].to(device)
-                    output = model(input_ids)[0]
-                    
+                    if (task == 'Embedding Regression'):
+                        output = model(input_ids, mask)[0]
+                    else:
+                        output = model(input_ids)[0]
+                    # if task == "Embedding Regression":
+                    #     output = model.decoder(output) + model.decoder_bias
+
                     if input_type == "cls_emb":
                         batch_embeddings = output[:, 0, :] 
                         embeddings.append(batch_embeddings)
@@ -39,15 +45,35 @@ def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64
                         embeddings.append(batch_embeddings)
                         
         output_total = torch.cat(embeddings, dim=0).float()
-        
+        print(output_total.shape)
+
         if visualization:
             visualize_embeddings(output_total.view(output_total.size(0), -1), 
-                                 labels, 
+                                 labels,
+                                 task,
                                  method=visualization_method, 
                                  label="Embedding Space")
             visualize_embeddings(data.view(data.size(0), -1), 
-                                 labels, 
+                                 labels,
+                                 task,
                                  method=visualization_method, 
                                  label="Original Space")
-        
+
+        if test_type == 'backbone':
+            if task_type == "regression":
+                nmse = torch.mean(
+                    torch.sum((output_total - labels.to(device)) ** 2, dim=1) /
+                    (torch.sum(labels.to(device) ** 2, dim=1) + 1e-10)
+                ).item()
+                print(f"[Evaluation] NMSE: {nmse:.6f}")
+        else:
+            if task_type == "classification":
+                preds = output_total.argmax(dim=1)
+                print(f"[Evaluation] F1-score: {f1_score(labels.cpu(), preds.cpu(), average='weighted'):.4f}")
+            else:
+                nmse = torch.mean(
+                    torch.sum((output_total - labels.to(device)) ** 2, dim=1) /
+                    (torch.sum(labels.to(device) ** 2, dim=1) + 1e-10)
+                ).item()
+                print(f"[Evaluation] NMSE: {nmse:.6f}")
     return output_total

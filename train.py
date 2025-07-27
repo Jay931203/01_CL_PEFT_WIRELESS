@@ -186,11 +186,11 @@ class CustomRegressionHead(nn.Module):
 
         super().__init__()
         self.regressor = nn.Sequential(
-            nn.Linear(input_dim, 512), 
-            nn.BatchNorm1d(512),      
+            nn.Linear(input_dim, 64),
+            nn.BatchNorm1d(64),
             nn.ReLU(),                
-            nn.Dropout(0.1),          
-            nn.Linear(512, output_dim)
+            nn.Dropout(0.1),
+            nn.Linear(64, output_dim)
             # nn.BatchNorm1d(256),
             # nn.ReLU(),
             # nn.Dropout(0.1),
@@ -439,16 +439,51 @@ def finetune(
             writer = csv.writer(file)
             writer.writerow([task, input_type, epoch + 1, avg_train_loss, avg_val_loss, f1 if f1 is not None else "-", scheduler.get_last_lr()[0], f"{time_now}"])
 
-    # Plot training and validation losses
-    plt.figure(figsize=(10, 6))
-    plt.plot(range(1, epochs + 1), train_losses, label="Training Loss")
-    plt.plot(range(1, epochs + 1), val_losses, label="Validation Loss", linestyle="--")
-    plt.xlabel("Epochs")
-    plt.ylabel("Loss")
-    plt.title("Training and Validation Loss")
-    plt.legend()
-    plt.grid(True)
-    # plt.savefig(os.path.join(results_folder, "loss_curve.png"))
+    # # Plot training and validation losses
+    # plt.figure(figsize=(10, 6))
+    # plt.plot(range(1, epochs + 1), train_losses, label="Training Loss")
+    # plt.plot(range(1, epochs + 1), val_losses, label="Validation Loss", linestyle="--")
+    # plt.xlabel("Epochs")
+    # plt.ylabel("Loss")
+    # plt.title("Training and Validation Loss")
+    # plt.legend()
+    # plt.grid(True)
+    # # plt.savefig(os.path.join(results_folder, "loss_curve.png"))
+    # plt.show()
+
+    #(HJ)추가수정: Accruacy + Loss 통합
+    # Plot training and validation losses + accuracy/NMSE
+    fig, ax1 = plt.subplots(figsize=(10, 6))
+
+    # 왼쪽 Y축: Loss
+    ax1.plot(range(1, epochs + 1), train_losses, label="Training Loss", color="tab:blue")
+    ax1.plot(range(1, epochs + 1), val_losses, label="Validation Loss", linestyle="--", color="tab:orange")
+    ax1.set_xlabel("Epochs")
+    ax1.set_ylabel("Loss", color="tab:blue")
+    ax1.tick_params(axis='y', labelcolor="tab:blue")
+    ax1.grid(True)
+
+    # 오른쪽 Y축: Accuracy or NMSE
+    ax2 = ax1.twinx()
+    ax2.plot(
+        range(1, epochs + 1), Accuracy,
+        label="F1-Score" if task_type == "classification" else "NMSE",
+        linestyle="-.", marker="o", color="tab:green"
+    )
+    ax2.set_ylabel("F1-Score" if task_type == "classification" else "NMSE", color="tab:green")
+    ax2.tick_params(axis='y', labelcolor="tab:green")
+
+    # 범례 통합
+    lines1, labels1 = ax1.get_legend_handles_labels()
+    lines2, labels2 = ax2.get_legend_handles_labels()
+    ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
+
+    # 제목 및 출력
+    plt.title("Training/Validation Loss and " + ("F1-Score" if task_type == "classification" else "NMSE"))
+    plt.tight_layout()
+
+    # 저장도 가능
+    # plt.savefig(os.path.join(results_folder, "loss_accuracy_curve.png"))
     plt.show()
 
     return wrapper, best_model_path, train_losses, val_losses, Accuracy, attn_maps

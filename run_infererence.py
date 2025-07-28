@@ -47,7 +47,7 @@ preprocessed_data, labels, raw_chs = tokenizer(
     task=task,
     n_beams = n_beams,
     mask=mask,
-    masking_percent = 0.10
+    masking_percent = 0.30
 )
 if isinstance(preprocessed_data, dict):
     all_samples = [torch.tensor(sample[0], dtype=torch.float32)
@@ -159,7 +159,7 @@ chs = lwm_inference(
     task=task,
     task_type=task_type,
     test_type=test_type,
-    visualization=True,
+    visualization=False,
     mask=True,
     labels=val_targets,
     visualization_method=visualization_method

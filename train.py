@@ -185,11 +185,11 @@ class CustomRegressionHead(nn.Module):
     def __init__(self, input_dim, output_dim):
 
         super().__init__()
-        self.linear1 = nn.Linear(input_dim, 1024)
-        self.bn1 = nn.BatchNorm1d(1024)
+        self.linear1 = nn.Linear(input_dim, 2048)
+        self.bn1 = nn.LayerNorm(2048)
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.3)
-        self.linear2 = nn.Linear(1024, output_dim, bias=False)
+        self.dropout = nn.Dropout(0.2)
+        self.linear2 = nn.Linear(2048, output_dim, bias=False)
         self.decoder_bias = nn.Parameter(torch.zeros(output_dim))
         # self.regressor = nn.Sequential(
         #     nn.Linear(input_dim, 2048),

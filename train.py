@@ -185,20 +185,31 @@ class CustomRegressionHead(nn.Module):
     def __init__(self, input_dim, output_dim):
 
         super().__init__()
-        self.regressor = nn.Sequential(
-            nn.Linear(input_dim, 64),
-            nn.BatchNorm1d(64),
-            nn.ReLU(),                
-            nn.Dropout(0.1),
-            nn.Linear(64, output_dim)
-            # nn.BatchNorm1d(256),
-            # nn.ReLU(),
-            # nn.Dropout(0.1),
-            # nn.Linear(256, output_dim)
-        )
+        self.linear1 = nn.Linear(input_dim, 1024)
+        self.bn1 = nn.BatchNorm1d(1024)
+        self.relu = nn.ReLU()
+        self.dropout = nn.Dropout(0.3)
+        self.linear2 = nn.Linear(1024, output_dim, bias=False)
+        self.decoder_bias = nn.Parameter(torch.zeros(output_dim))
+        # self.regressor = nn.Sequential(
+        #     nn.Linear(input_dim, 2048),
+        #     nn.BatchNorm1d(2048),
+        #     nn.ReLU(),
+        #     nn.Dropout(0.2),
+        #     nn.Linear(2048, output_dim)
+        # )
 
     def forward(self, x):
-        return self.regressor(x)
+        residual = x  # 원본 유지
+        x = self.linear1(x)        # [B, 2048]
+        x = self.bn1(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        x = self.linear2(x) + self.decoder_bias  # [B, output_dim]
+        if residual.shape[-1] == x.shape[-1]:
+            x = x + residual  # 최종 residual 연결
+        return x
+        #return self.regressor(x)
 
 
 def custom_heads(input_dim, num_classes=None, output_dim=None, task_type="classification"):
@@ -225,11 +236,12 @@ def custom_heads(input_dim, num_classes=None, output_dim=None, task_type="classi
 #%%
 # Fine-tuning wrapper for the base model
 class FineTuningWrapper(nn.Module):
-    def __init__(self, model, task_head, fine_tune_layers="full"):
+    def __init__(self, model, task_head, mask, fine_tune_layers="full"):
         super().__init__()
         self.model = model
         self.task_head = task_head
-        
+        ##(HJ)
+        self.mask = mask
         # Freeze all layers initially
         for param in self.model.parameters():
             param.requires_grad = False
@@ -257,17 +269,16 @@ class FineTuningWrapper(nn.Module):
                     if any(layer in name for layer in fine_tune_layers):
                         param.requires_grad = True
 
-    def forward(self, x, input_type="cls_emb"):
+    def forward(self, x, input_type="cls_emb", mask = False):
         if input_type == "raw":
             task_input = x.view(x.size(0), -1)
         else:
-            embeddings, attn_maps = self.model(x)  # Get embeddings from the base model
+            embeddings, attn_maps = self.model(x, input_type=input_type, mask = mask)  # Get embeddings from the base model
             if input_type == "cls_emb":
                 task_input = embeddings[:, 0, :]  # CLS token
             elif input_type == "channel_emb":
                 chs_emb = embeddings[:, 1:, :]
                 task_input = chs_emb.view(chs_emb.size(0), -1) # embeddings.mean(dim=1)  # Mean pooling over channel embeddings
-
         return self.task_head(task_input), 0 if input_type=="raw" else attn_maps
 #%%
 # Fine-tuning function
@@ -284,6 +295,7 @@ def finetune(
     fine_tune_layers=None,
     optimizer_config=None,
     criterion=None,
+    mask=False,
     epochs=10,
     device="cuda",
     task="Beam Prediction"
@@ -302,21 +314,29 @@ def finetune(
         writer = csv.writer(file)
         writer.writerow(["Task", "Input", "Epoch", "Train Loss", "Validation Loss", "F1-Score (Classification)", "Learning Rate", "Time"])
 
-    for batch in val_loader:
-        input_data, targets = batch[0].to(device), batch[1].to(device)
-        break
+#    (HJ)
+    if val_loader is not None:
+        for batch in val_loader:
+            input_data, targets = batch[0].to(device), batch[1].to(device)
+            break
+    else:
+        attn_maps = None
+        input_data = torch.randn(64, 33, 32).to(device)
     
     if input_type == "cls_emb":
         n_patches = 1
         patch_size = 128
     elif input_type == "channel_emb":
-        n_patches = input_data.shape[1]-1
-        patch_size = 128
+        n_patches = input_data.shape[1] - 1
+        # (HJ)
+        if mask == True:
+            patch_size = 32
+        else:
+            patch_size = 128
     elif input_type == "raw":
         n_patches = input_data.shape[1]
         patch_size = 32
         # patch_size = 1
-    
     if use_custom_head:
         custom_head = custom_heads(input_dim=n_patches*patch_size, 
                                    num_classes=num_classes, 
@@ -340,7 +360,7 @@ def finetune(
         raise ValueError("Invalid task_type. Choose 'classification' or 'regression'.")
 
     # Wrap the model with the fine-tuning head
-    wrapper = FineTuningWrapper(base_model, task_head, fine_tune_layers=fine_tune_layers)
+    wrapper = FineTuningWrapper(base_model, task_head, mask, fine_tune_layers=fine_tune_layers)
     wrapper = wrapper.to(device)
     
     print(f'Number of head parameters: {count_parameters(wrapper)}')
@@ -411,7 +431,7 @@ def finetune(
             
             time_now = f"{time.time():.0f}"
             # Save the best model
-            if avg_val_loss < best_val_loss:
+            if (epoch > epochs-5) and (avg_val_loss < best_val_loss):
                 best_val_loss = avg_val_loss
                 best_model_path = os.path.join(results_folder, f"{input_type}_epoch{epoch+1}_valLoss{avg_val_loss:.4f}_{time_now}.pth")
                 torch.save(wrapper.state_dict(), best_model_path)
@@ -427,29 +447,16 @@ def finetune(
                 preds = outputs.detach().cpu()
                 trues = targets.detach().cpu()
                 mse = torch.sum((preds - trues) ** 2, dim=-1)
-                power = torch.sum(trues ** 2, dim=-1)
-                nmse = torch.mean(mse / (power + 1e-10)).item()
+                power = torch.sum(trues ** 2, dim=-1) + 1e-10
+                nmse = torch.mean(mse / power).item()
                 print(f"Epoch {epoch + 1}, Validation NMSE: {nmse:.6f}")
                 Accuracy.append(nmse)
-
         scheduler.step()
 
         # Log results
         with open(log_file, mode='a', newline='') as file:
             writer = csv.writer(file)
             writer.writerow([task, input_type, epoch + 1, avg_train_loss, avg_val_loss, f1 if f1 is not None else "-", scheduler.get_last_lr()[0], f"{time_now}"])
-
-    # # Plot training and validation losses
-    # plt.figure(figsize=(10, 6))
-    # plt.plot(range(1, epochs + 1), train_losses, label="Training Loss")
-    # plt.plot(range(1, epochs + 1), val_losses, label="Validation Loss", linestyle="--")
-    # plt.xlabel("Epochs")
-    # plt.ylabel("Loss")
-    # plt.title("Training and Validation Loss")
-    # plt.legend()
-    # plt.grid(True)
-    # # plt.savefig(os.path.join(results_folder, "loss_curve.png"))
-    # plt.show()
 
     #(HJ)추가수정: Accruacy + Loss 통합
     # Plot training and validation losses + accuracy/NMSE
@@ -485,5 +492,5 @@ def finetune(
     # 저장도 가능
     # plt.savefig(os.path.join(results_folder, "loss_accuracy_curve.png"))
     plt.show()
-
+    #print(wrapper)
     return wrapper, best_model_path, train_losses, val_losses, Accuracy, attn_maps

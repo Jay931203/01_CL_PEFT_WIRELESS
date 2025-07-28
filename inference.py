@@ -16,7 +16,6 @@ from sklearn.metrics import f1_score
 warnings.filterwarnings('ignore')
 #%%
 def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64, visualization=False, task = 'LoS/NLoS Classification', mask= False, task_type = 'classification', test_type = 'backbone', labels=None, visualization_method="t-sne"):
-    
     if input_type == "raw":
         output_total = data
     else:
@@ -31,22 +30,23 @@ def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64
 
                     input_ids = batch[0].to(device)
                     if (task == 'Embedding Regression'):
-                        output = model(input_ids, mask)[0]
+                        output = model(input_ids,  input_type=input_type, mask=mask)[0]
                     else:
                         output = model(input_ids)[0]
                     # if task == "Embedding Regression":
                     #     output = model.decoder(output) + model.decoder_bias
 
                     if input_type == "cls_emb":
-                        batch_embeddings = output[:, 0, :] 
+                        batch_embeddings = output[:, 0, :]
                         embeddings.append(batch_embeddings)
                     elif input_type == "channel_emb":
-                        batch_embeddings = output[:, 1:, :] 
+                        if (test_type == 'backbone'):
+                            batch_embeddings = output[:, 1:, :]
+                        elif (test_type == 'full'):
+                            batch_embeddings = output
                         embeddings.append(batch_embeddings)
-                        
-        output_total = torch.cat(embeddings, dim=0).float()
-        print(output_total.shape)
 
+        output_total = torch.cat(embeddings, dim=0).float()
         if visualization:
             visualize_embeddings(output_total.view(output_total.size(0), -1), 
                                  labels,
@@ -71,6 +71,8 @@ def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64
                 preds = output_total.argmax(dim=1)
                 print(f"[Evaluation] F1-score: {f1_score(labels.cpu(), preds.cpu(), average='weighted'):.4f}")
             else:
+                if (test_type == 'full'):
+                    labels = labels.view(labels.size(0), -1)
                 nmse = torch.mean(
                     torch.sum((output_total - labels.to(device)) ** 2, dim=1) /
                     (torch.sum(labels.to(device) ** 2, dim=1) + 1e-10)

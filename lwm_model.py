@@ -133,7 +133,7 @@ class lwm(nn.Module):
         print(f"Model loaded successfully from {ckpt_name}")
         return model
 
-    def forward(self, input_ids, masked_pos=None):
+    def forward(self, input_ids, input_type, mask = False, masked_pos=None):
         #print(f"[LWM] Forward called. masked_pos = {masked_pos is not None}")
         # Step 1: Embedding
         output = self.embedding(input_ids)
@@ -146,12 +146,13 @@ class lwm(nn.Module):
 
         # If masked_pos is provided, perform masked token prediction
         # (HJ) from masked_pos to mask style(from masked only decoding to all embedding decoding)
-        if masked_pos is not None:
+        if mask is not None:
             #print(output.shape)
             #print("[LWM] Decoder will be used.")
             h_all = self.norm(F.relu(self.linear(output[:, :, :])))
-            logits_lm = self.decoder(h_all) + self.decoder_bias  # [B, 32, dim]
-            return logits_lm, output, attention_maps
+            output = self.decoder(h_all) + self.decoder_bias  # [B, 32, dim]
+            return output, attention_maps #(HJ)
+            #return logits_lm, output, attention_maps
         # if masked_pos is not None:
         #     print("[LWM] Decoder will be used.")
         #     masked_pos = masked_pos.long()[:, :, None].expand(-1, -1, output.size(-1))

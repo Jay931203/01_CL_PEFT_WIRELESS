@@ -64,7 +64,6 @@ def visualize_embeddings(embeddings, labels, task ='LoS/NLoS Classification', me
     reduced_embeddings = reducer.fit_transform(embeddings)
 
     plt.figure(figsize=(10, 8))
-    print(labels.shape)
     if (task != 'Channel Reconstruction' and task != 'Embedding Regression'):
         # Create a scatter plot with color-coding based on labels
         num_classes = len(np.unique(labels))
@@ -229,7 +228,12 @@ def prepare_loaders(
         dataset = TensorDataset(samples, labels)
         target = 0  # REVISE if needed
     elif task_type == "regression":
-        target = samples[:, 1:, :].view(samples.size(0), -1)  # Reshape for regression targets
+        #(HJ), already truncated for regression
+        if (input_type == 'raw'):
+            target = samples[:, 0:, :].view(samples.size(0), -1)  # Reshape for regression targets
+        else:
+            target = samples[:, 1:, :].view(samples.size(0), -1)  # Reshape for regression targets
+        print(target.shape)
         dataset = TensorDataset(samples, target)
     else:
         raise ValueError("Invalid task_type. Choose 'classification' or 'regression'.")

@@ -1,0 +1,5 @@
+Task,Input,Epoch,Train Loss,Validation Loss,F1-Score (Classification),Learning Rate,Time
+Embedding Regression,channel_emb,1,131.32748139871134,78.56253252531353,-,0.001,1753706803
+Embedding Regression,channel_emb,2,65.4369999911334,58.478383114463405,-,0.001,1753706808
+Embedding Regression,channel_emb,3,55.27897134987084,66.06143936358,-,0.001,1753706812
+Embedding Regression,channel_emb,4,53.50488554464804,51.39625378658897,-,0.001,1753706816

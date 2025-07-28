@@ -1,0 +1,4 @@
+Task,Input,Epoch,Train Loss,Validation Loss,F1-Score (Classification),Learning Rate,Time
+Embedding Regression,raw,1,484.2060311358908,475.1159896850586,-,0.001,1753669662
+Embedding Regression,raw,2,470.7242332126783,462.4705694447393,-,0.001,1753669663
+Embedding Regression,raw,3,455.67599918531334,448.97048419454825,-,0.001,1753669663

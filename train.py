@@ -185,26 +185,26 @@ class CustomRegressionHead(nn.Module):
     def __init__(self, input_dim, output_dim):
 
         super().__init__()
-        self.linear1 = nn.Linear(input_dim, 2048)
-        self.bn1 = nn.LayerNorm(2048)
-        self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.2)
+        self.linear1 = nn.utils.weight_norm(nn.Linear(input_dim, 2048))
+        self.bn1 = nn.LayerNorm(input_dim)
+        self.relu = nn.GELU()
+        self.dropout = nn.Dropout(0.1)
+        self.linear1_1 = nn.Linear(2048, 2048)
+        self.relu1_1 = nn.GELU()
+        self.dropout1_1 = nn.Dropout(0.1)
         self.linear2 = nn.Linear(2048, output_dim, bias=False)
         self.decoder_bias = nn.Parameter(torch.zeros(output_dim))
-        # self.regressor = nn.Sequential(
-        #     nn.Linear(input_dim, 2048),
-        #     nn.BatchNorm1d(2048),
-        #     nn.ReLU(),
-        #     nn.Dropout(0.2),
-        #     nn.Linear(2048, output_dim)
-        # )
+
 
     def forward(self, x):
         residual = x  # 원본 유지
+        #x = self.bn1(x)
         x = self.linear1(x)        # [B, 2048]
-        x = self.bn1(x)
         x = self.relu(x)
         x = self.dropout(x)
+        x = self.linear1_1(x)        # [B, 2048]
+        x = self.relu1_1(x)
+        x = self.dropout1_1(x)
         x = self.linear2(x) + self.decoder_bias  # [B, output_dim]
         if residual.shape[-1] == x.shape[-1]:
             x = x + residual  # 최종 residual 연결
@@ -297,6 +297,8 @@ def finetune(
     criterion=None,
     mask=False,
     epochs=10,
+    fine_tune=False,
+    resume_path = None,
     device="cuda",
     task="Beam Prediction"
 ):
@@ -381,116 +383,127 @@ def finetune(
     train_losses, val_losses, Accuracy = [], [], []
     best_val_loss = float("inf")
     best_model_path = None
+    attn_maps = None
 
-    for epoch in range(epochs):
-        # Training loop
-        wrapper.train()
-        epoch_loss = 0.0
+    if resume_path is not None and os.path.exists(resume_path):
+        wrapper.load_state_dict(torch.load(resume_path, map_location=device))
+        best_model_path = resume_path
+        print(f"✅ Resuming from the resume_path: {resume_path}")
+    else:
+        print("🚀 Starting training from scratch")
+    if (fine_tune):
 
-        with tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs}") as progress_bar:
-            for batch in progress_bar:
-                input_data, targets = batch[0].to(device), batch[1].to(device)
-                optimizer.zero_grad()
+        for epoch in range(epochs):
+            # Training loop
+            wrapper.train()
+            epoch_loss = 0.0
 
-                with autocast():
-                    outputs, attn_maps = wrapper(input_data, input_type=input_type)
-                    loss = criterion(outputs, targets)
-
-                scaler.scale(loss).backward()
-                scaler.step(optimizer)
-                scaler.update()
-
-                epoch_loss += loss.item()
-                progress_bar.set_postfix({"Loss": loss.item()})
-
-        avg_train_loss = epoch_loss / len(train_loader)
-        train_losses.append(avg_train_loss)
-
-        # Validation loop
-        if val_loader:
-            wrapper.eval()
-            val_loss = 0.0
-            all_preds, all_targets = [], []
-
-            with torch.no_grad():
-                for batch in val_loader:
+            with tqdm(train_loader, desc=f"Epoch {epoch + 1}/{epochs}") as progress_bar:
+                for batch in progress_bar:
                     input_data, targets = batch[0].to(device), batch[1].to(device)
+                    optimizer.zero_grad()
+
                     with autocast():
-                        outputs, _ = wrapper(input_data, input_type=input_type)
+                        outputs, attn_maps = wrapper(input_data, input_type=input_type)
                         loss = criterion(outputs, targets)
 
-                    val_loss += loss.item()
+                    scaler.scale(loss).backward()
+                    scaler.step(optimizer)
+                    scaler.update()
 
-                    if task_type == "classification":
-                        preds = torch.argmax(outputs, dim=1).cpu().numpy()
-                        all_preds.extend(preds)
-                        all_targets.extend(targets.cpu().numpy())
+                    epoch_loss += loss.item()
+                    progress_bar.set_postfix({"Loss": loss.item()})
 
-            avg_val_loss = val_loss / len(val_loader)
-            val_losses.append(avg_val_loss)
-            
-            time_now = f"{time.time():.0f}"
-            # Save the best model
-            if (epoch > epochs-5) and (avg_val_loss < best_val_loss):
-                best_val_loss = avg_val_loss
-                best_model_path = os.path.join(results_folder, f"{input_type}_epoch{epoch+1}_valLoss{avg_val_loss:.4f}_{time_now}.pth")
-                torch.save(wrapper.state_dict(), best_model_path)
-                print(f"Model saved at {best_model_path} with validation loss: {best_val_loss:.4f}")
+            avg_train_loss = epoch_loss / len(train_loader)
+            train_losses.append(avg_train_loss)
 
-            # Compute F1-score for classification tasks
-            f1 = None
-            if task_type == "classification":
-                f1 = f1_score(all_targets, all_preds, average="weighted")
-                print(f"Epoch {epoch + 1}, Validation F1-Score: {f1:.4f}")
-                Accuracy.append(f1)
-            elif task_type == "regression":
-                preds = outputs.detach().cpu()
-                trues = targets.detach().cpu()
-                mse = torch.sum((preds - trues) ** 2, dim=-1)
-                power = torch.sum(trues ** 2, dim=-1) + 1e-10
-                nmse = torch.mean(mse / power).item()
-                print(f"Epoch {epoch + 1}, Validation NMSE: {nmse:.6f}")
-                Accuracy.append(nmse)
-        scheduler.step()
+            # Validation loop
+            if val_loader:
+                wrapper.eval()
+                val_loss = 0.0
+                all_preds, all_targets = [], []
 
-        # Log results
-        with open(log_file, mode='a', newline='') as file:
-            writer = csv.writer(file)
-            writer.writerow([task, input_type, epoch + 1, avg_train_loss, avg_val_loss, f1 if f1 is not None else "-", scheduler.get_last_lr()[0], f"{time_now}"])
+                with torch.no_grad():
+                    for batch in val_loader:
+                        input_data, targets = batch[0].to(device), batch[1].to(device)
+                        with autocast():
+                            outputs, _ = wrapper(input_data, input_type=input_type)
+                            loss = criterion(outputs, targets)
 
-    #(HJ)추가수정: Accruacy + Loss 통합
-    # Plot training and validation losses + accuracy/NMSE
-    fig, ax1 = plt.subplots(figsize=(10, 6))
+                        val_loss += loss.item()
 
-    # 왼쪽 Y축: Loss
-    ax1.plot(range(1, epochs + 1), train_losses, label="Training Loss", color="tab:blue")
-    ax1.plot(range(1, epochs + 1), val_losses, label="Validation Loss", linestyle="--", color="tab:orange")
-    ax1.set_xlabel("Epochs")
-    ax1.set_ylabel("Loss", color="tab:blue")
-    ax1.tick_params(axis='y', labelcolor="tab:blue")
-    ax1.grid(True)
+                        if task_type == "classification":
+                            preds = torch.argmax(outputs, dim=1).cpu().numpy()
+                            all_preds.extend(preds)
+                            all_targets.extend(targets.cpu().numpy())
 
-    # 오른쪽 Y축: Accuracy or NMSE
-    ax2 = ax1.twinx()
-    ax2.plot(
-        range(1, epochs + 1), Accuracy,
-        label="F1-Score" if task_type == "classification" else "NMSE",
-        linestyle="-.", marker="o", color="tab:green"
-    )
-    ax2.set_ylabel("F1-Score" if task_type == "classification" else "NMSE", color="tab:green")
-    ax2.tick_params(axis='y', labelcolor="tab:green")
+                avg_val_loss = val_loss / len(val_loader)
+                val_losses.append(avg_val_loss)
 
-    # 범례 통합
-    lines1, labels1 = ax1.get_legend_handles_labels()
-    lines2, labels2 = ax2.get_legend_handles_labels()
-    ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
+                time_now = f"{time.time():.0f}"
+                # Save the best model
+                if (avg_val_loss < best_val_loss):
+                    best_val_loss = avg_val_loss
+                    best_model_path = os.path.join(results_folder, f"{input_type}_epoch{epoch+1}_valLoss{avg_val_loss:.4f}_{time_now}.pth")
+                    best_model_path = best_model_path.replace("\\", "/")
+                    torch.save(wrapper.state_dict(), best_model_path)
+                    print(f"Model saved at {best_model_path} with validation loss: {best_val_loss:.4f}")
 
-    # 제목 및 출력
-    plt.title("Training/Validation Loss and " + ("F1-Score" if task_type == "classification" else "NMSE"))
-    plt.tight_layout()
+                # Compute F1-score for classification tasks
+                f1 = None
+                if task_type == "classification":
+                    f1 = f1_score(all_targets, all_preds, average="weighted")
+                    print(f"Epoch {epoch + 1}, Validation F1-Score: {f1:.4f}")
+                    Accuracy.append(f1)
+                elif task_type == "regression":
+                    preds = outputs.detach().cpu()
+                    trues = targets.detach().cpu()
+                    mse = torch.sum((preds - trues) ** 2, dim=-1)
+                    power = torch.sum(trues ** 2, dim=-1) + 1e-10
+                    nmse = torch.mean(mse / power).item()
+                    print(f"Epoch {epoch + 1}, Validation NMSE: {nmse:.6f}")
+                    Accuracy.append(nmse)
+            scheduler.step()
 
-    # 저장도 가능
-    # plt.savefig(os.path.join(results_folder, "loss_accuracy_curve.png"))
-    plt.show()
-    #print(wrapper)
-    return wrapper, best_model_path, train_losses, val_losses, Accuracy, attn_maps
+            # Log results
+            with open(log_file, mode='a', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerow([task, input_type, epoch + 1, avg_train_loss, avg_val_loss, f1 if f1 is not None else "-", scheduler.get_last_lr()[0], f"{time_now}"])
+
+        #(HJ)추가수정: Accruacy + Loss 통합
+        # Plot training and validation losses + accuracy/NMSE
+        fig, ax1 = plt.subplots(figsize=(10, 6))
+
+        # 왼쪽 Y축: Loss
+        ax1.plot(range(1, epochs + 1), train_losses, label="Training Loss", color="tab:blue")
+        ax1.plot(range(1, epochs + 1), val_losses, label="Validation Loss", linestyle="--", color="tab:orange")
+        ax1.set_xlabel("Epochs")
+        ax1.set_ylabel("Loss", color="tab:blue")
+        ax1.tick_params(axis='y', labelcolor="tab:blue")
+        ax1.grid(True)
+
+        # 오른쪽 Y축: Accuracy or NMSE
+        ax2 = ax1.twinx()
+        ax2.plot(
+            range(1, epochs + 1), Accuracy,
+            label="F1-Score" if task_type == "classification" else "NMSE",
+            linestyle="-.", marker="o", color="tab:green"
+        )
+        ax2.set_ylabel("F1-Score" if task_type == "classification" else "NMSE", color="tab:green")
+        ax2.tick_params(axis='y', labelcolor="tab:green")
+
+        # 범례 통합
+        lines1, labels1 = ax1.get_legend_handles_labels()
+        lines2, labels2 = ax2.get_legend_handles_labels()
+        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
+
+        # 제목 및 출력
+        plt.title("Training/Validation Loss and " + ("F1-Score" if task_type == "classification" else "NMSE"))
+        plt.tight_layout()
+
+        # 저장도 가능
+        # plt.savefig(os.path.join(results_folder, "loss_accuracy_curve.png"))
+        plt.show()
+    else:
+        print("!!!Fine-tune SKIP!!!")
+    return wrapper, best_model_path, train_losses, val_losses, Accuracy, attn_maps, best_model_path

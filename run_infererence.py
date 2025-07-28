@@ -47,7 +47,7 @@ preprocessed_data, labels, raw_chs = tokenizer(
     task=task,
     n_beams = n_beams,
     mask=mask,
-    masking_percent = 0.30
+    masking_percent = 0.3
 )
 if isinstance(preprocessed_data, dict):
     all_samples = [torch.tensor(sample[0], dtype=torch.float32)
@@ -93,9 +93,7 @@ print("✅ Inference Done")
 
 # Step 3: Proposed Fine-tuning
 results = np.zeros((len(fine_tuning_status), len(input_types), len(train_ratios)))
-
-
-
+fine_tune = False
 
 for fine_tuning_stat_idx, fine_tuning_stat in enumerate(fine_tuning_status):
     for input_type_idx, input_type in enumerate(input_types):
@@ -115,12 +113,11 @@ for fine_tuning_stat_idx, fine_tuning_stat in enumerate(fine_tuning_status):
                 input_type=input_type,
                 task_type=task_type,
                 train_ratio=train_ratio,
-                batch_size=64,
+                batch_size=128,
                 seed=42
             )
-
             # Fine-tune LWM
-            fine_tuned_model, best_model_path, train_losses, val_losses, Accuracy, attn_maps_ft = finetune(
+            fine_tuned_model, best_model_path, train_losses, val_losses, Accuracy, attn_maps_ft, best_model_path = finetune(
                 base_model=model,
                 train_loader=train_loader,
                 val_loader=val_loader,
@@ -131,12 +128,16 @@ for fine_tuning_stat_idx, fine_tuning_stat in enumerate(fine_tuning_status):
                 use_custom_head=True,
                 fine_tune_layers=fine_tuning_stat,
                 optimizer_config={"lr": 1e-3},
-                epochs=20,
+                epochs=150,
                 mask=mask,
+                fine_tune=fine_tune,
+                resume_path = "results/Embedding Regression/1753710883/channel_emb_epoch199_valLoss27.9700_1753711888.pth", #0.037
                 device=device,
                 task=task
             )
-            results[fine_tuning_stat_idx][input_type_idx][train_ratio_idx] = Accuracy[-1]
+            if (fine_tune):
+                results[fine_tuning_stat_idx][input_type_idx][train_ratio_idx] = Accuracy[-1]
+
 
 test_type = ["backbone", "full"][1]
 
@@ -155,12 +156,13 @@ chs = lwm_inference(
     val_samples,
     input_type = input_types[0],
     device=device,
-    batch_size=64,
+    batch_size=128,
     task=task,
     task_type=task_type,
     test_type=test_type,
     visualization=False,
     mask=True,
     labels=val_targets,
+    resume_path = best_model_path,
     visualization_method=visualization_method
 )

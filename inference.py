@@ -12,10 +12,10 @@ from utils import visualize_embeddings
 from tqdm import tqdm
 import warnings
 from sklearn.metrics import f1_score
-
+import os
 warnings.filterwarnings('ignore')
 #%%
-def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64, visualization=False, task = 'LoS/NLoS Classification', mask= False, task_type = 'classification', test_type = 'backbone', labels=None, visualization_method="t-sne"):
+def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64, visualization=False, task = 'LoS/NLoS Classification', mask= False, task_type = 'classification', test_type = 'backbone', labels=None, resume_path = None, visualization_method="t-sne"):
     if input_type == "raw":
         output_total = data
     else:
@@ -23,6 +23,11 @@ def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
         
         embeddings = []
+        if resume_path is not None and os.path.exists(resume_path):
+            model.load_state_dict(torch.load(resume_path, map_location=device))
+            print(f"✅ Resuming from the resume_path: {resume_path}")
+        else:
+            print("🚀 Starting training from Latest")
         model.eval()
         with torch.no_grad():
             with tqdm(dataloader, desc="Inference", unit="batch") as t:

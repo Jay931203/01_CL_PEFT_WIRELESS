@@ -248,7 +248,12 @@ def prepare_loaders(
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size], generator=generator)
 
     # Create DataLoaders
-    train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, generator=generator)
+    print(train_dataset)
+    if len(train_dataset)<2:
+        print("🚫 No training will be performed.")
+        train_loader = None
+    else:
+        train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, generator=generator)
     val_loader = DataLoader(val_dataset, batch_size=batch_size, shuffle=False)
 
     print(f"Train size: {len(train_dataset)}, Validation size: {len(val_dataset)}")

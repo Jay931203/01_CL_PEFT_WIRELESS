@@ -377,6 +377,9 @@ def uniform_sampling(dataset, sampling_div, n_rows, users_per_row):
     cols = np.arange(users_per_row, step=sampling_div[0])
     rows = np.arange(n_rows, step=sampling_div[1])
     uniform_idxs = np.array([j + i * users_per_row for i in rows for j in cols])
+    #(HJ) Added for size error - IndexError: index 5130 is out of bounds for axis 0 with size 5130
+    uniform_idxs = uniform_idxs[uniform_idxs < len(dataset[0]['user']['channel'])]
+    print(len(dataset[0]['user']['channel']))
     return uniform_idxs
 
 def select_by_idx(dataset, idxs):
@@ -547,10 +550,10 @@ def scenario_prop():
         'n_subcarriers': 32
     },
     'city_7_sandiego': {
-        'n_rows': 207,
+        'n_rows': 70, #(Original) 207
         'n_per_row': 176,
         'n_ant_bs': 16,
-        'n_subcarriers': 64
+        'n_subcarriers': 32 #Original:64
     },
     'city_8_dallas': {
         'n_rows': 207,
@@ -571,16 +574,16 @@ def scenario_prop():
         'n_subcarriers': 512
     },
     'city_11_santaclara': {
-        'n_rows': 117,
+        'n_rows': 45, #Original: 117
         'n_per_row': 285,
-        'n_ant_bs': 32,
+        'n_ant_bs': 16, #Original:32
         'n_subcarriers': 32
     },
     'city_12_fortworth': {
-        'n_rows': 214,
+        'n_rows': 85, #Original: 214
         'n_per_row': 179,
-        'n_ant_bs': 32,
-        'n_subcarriers': 64
+        'n_ant_bs': 16, #Original:32
+        'n_subcarriers': 32 #Original:64
     },
     'city_13_columbus': {
         'n_rows': 178,
@@ -595,9 +598,9 @@ def scenario_prop():
         'n_subcarriers': 256
     },
     'city_15_indianapolis': {
-        'n_rows': 200,
+        'n_rows': 79, #Original: 200
         'n_per_row': 196,
-        'n_ant_bs': 64,
+        'n_ant_bs': 16, #Original:64
         'n_subcarriers': 32
     },
     'city_16_sanfrancisco': {
@@ -613,16 +616,16 @@ def scenario_prop():
         'n_subcarriers': 128
     },
     'city_18_denver': {
-        'n_rows': 212,
+        'n_rows': 84,
         'n_per_row': 204,
-        'n_ant_bs': 128,
+        'n_ant_bs':16, #Original:128
         'n_subcarriers': 32
     },
     'city_19_oklahoma': {
-        'n_rows': 204,
+        'n_rows': 81, #Original:204
         'n_per_row': 188,
-        'n_ant_bs': 128,
-        'n_subcarriers': 64
+        'n_ant_bs':16, #Original:128
+        'n_subcarriers': 32 #Original:64
     },
     'asu_campus1_v1': {
         'n_rows': [0, 1*int(321/20)],

@@ -50,7 +50,9 @@ def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64
                         elif (test_type == 'full'):
                             batch_embeddings = output
                         embeddings.append(batch_embeddings)
-
+        print(f"ℹ️ input_type: {input_type}")
+        print(f"ℹ️ data shape: {data.shape}")
+        print(f"ℹ️ dataloader size: {len(dataloader)}")
         output_total = torch.cat(embeddings, dim=0).float()
         if visualization:
             visualize_embeddings(output_total.view(output_total.size(0), -1), 
@@ -71,10 +73,12 @@ def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64
                     (torch.sum(labels.to(device) ** 2, dim=1) + 1e-10)
                 ).item()
                 print(f"[Evaluation] NMSE: {nmse:.6f}")
+                metric = nmse
         else:
             if task_type == "classification":
                 preds = output_total.argmax(dim=1)
-                print(f"[Evaluation] F1-score: {f1_score(labels.cpu(), preds.cpu(), average='weighted'):.4f}")
+                metric = f1_score(labels.cpu(), preds.cpu(), average='weighted')
+                print(f"[Evaluation] F1-score: {metric:.4f}")
             else:
                 if (test_type == 'full'):
                     labels = labels.view(labels.size(0), -1)
@@ -82,5 +86,6 @@ def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64
                     torch.sum((output_total - labels.to(device)) ** 2, dim=1) /
                     (torch.sum(labels.to(device) ** 2, dim=1) + 1e-10)
                 ).item()
+                metric = nmse
                 print(f"[Evaluation] NMSE: {nmse:.6f}")
-    return output_total
+    return output_total, metric

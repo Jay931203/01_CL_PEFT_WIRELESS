@@ -6,6 +6,8 @@ This scripts performs the LWM inference on raw channel representations.
 
 @author: Sadjad Alikhani
 """
+import sys
+
 import torch
 from torch.utils.data import DataLoader, TensorDataset
 from utils import visualize_embeddings
@@ -21,7 +23,8 @@ def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64
     else:
         dataset = TensorDataset(data)
         dataloader = DataLoader(dataset, batch_size=batch_size, shuffle=False)
-        
+
+        #inputs = []
         embeddings = []
         if resume_path is not None and os.path.exists(resume_path):
             model.load_state_dict(torch.load(resume_path, map_location=device))
@@ -34,6 +37,7 @@ def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64
                 for batch in t:
 
                     input_ids = batch[0].to(device)
+                    #inputs.append(input_ids[:, 1:, :])
                     if (task == 'Embedding Regression'):
                         output = model(input_ids,  input_type=input_type, mask=mask)[0]
                     else:
@@ -50,12 +54,17 @@ def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64
                         elif (test_type == 'full'):
                             batch_embeddings = output
                         embeddings.append(batch_embeddings)
-        print(f"ℹ️ input_type: {input_type}")
-        print(f"ℹ️ data shape: {data.shape}")
-        print(f"ℹ️ dataloader size: {len(dataloader)}")
+        # print(f"ℹ️ input_type: {input_type}")
+        # print(f"ℹ️ data shape: {data.shape}")
+        # print(f"ℹ️ dataloader size: {len(dataloader)}")
+        # inputs_total =  torch.cat(inputs, dim=0).float()
+        labels = labels.to(device)
+        # diff = torch.abs(inputs_total - labels)
+        # print("(Masking Check) Mean absolute difference:", torch.mean(diff))
+
         output_total = torch.cat(embeddings, dim=0).float()
         if visualization:
-            visualize_embeddings(output_total.view(output_total.size(0), -1), 
+            visualize_embeddings(output_total.view(output_total.size(0), -1),
                                  labels,
                                  task,
                                  method=visualization_method, 
@@ -65,27 +74,44 @@ def lwm_inference(model, data, input_type="cls_emb", device="cpu", batch_size=64
                                  task,
                                  method=visualization_method, 
                                  label="Original Space")
-
-        if test_type == 'backbone':
+        metric = None
+        if 0:
+        #if test_type == 'backbone':
             if task_type == "regression":
                 nmse = torch.mean(
-                    torch.sum((output_total - labels.to(device)) ** 2, dim=1) /
-                    (torch.sum(labels.to(device) ** 2, dim=1) + 1e-10)
+                    torch.sum((output_total.view(output_total.size(0), -1) - labels.view(labels.size(0), -1)) ** 2, dim=1) /
+                    (torch.sum(labels.view(labels.size(0), -1) ** 2, dim=1) + 1e-10)
                 ).item()
-                print(f"[Evaluation] NMSE: {nmse:.6f}")
+                nmse2 = torch.mean(
+                    torch.sum((output_total - labels) ** 2, dim=1) /
+                    (torch.sum(labels**2, dim=1) + 1e-10)
+                ).item()
+                print(output_total.shape)
+                print(output_total.view(output_total.size(0), -1).shape)
+                print(labels.shape)
+                print(labels.view(labels.size(0), -1).shape)
+                print(f"[Evaluation] NMSE: {nmse:.6f}, {nmse2:.6f}")
                 metric = nmse
+                #sys.exit(1)
         else:
             if task_type == "classification":
                 preds = output_total.argmax(dim=1)
                 metric = f1_score(labels.cpu(), preds.cpu(), average='weighted')
                 print(f"[Evaluation] F1-score: {metric:.4f}")
             else:
+                print(output_total.shape)
                 if (test_type == 'full'):
                     labels = labels.view(labels.size(0), -1)
+                print(labels.shape)
                 nmse = torch.mean(
                     torch.sum((output_total - labels.to(device)) ** 2, dim=1) /
                     (torch.sum(labels.to(device) ** 2, dim=1) + 1e-10)
                 ).item()
+                nmse2 = torch.mean(
+                    torch.sum((output_total.view(output_total.size(0), -1) - labels.view(labels.size(0), -1)) ** 2, dim=1) /
+                    (torch.sum(labels.view(labels.size(0), -1) ** 2, dim=1) + 1e-10)
+                ).item()
+
                 metric = nmse
-                print(f"[Evaluation] NMSE: {nmse:.6f}")
+                print(f"[Evaluation] NMSE: {nmse:.6f}, {nmse2:.6f}")
     return output_total, metric

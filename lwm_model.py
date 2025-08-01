@@ -144,6 +144,8 @@ class lwm(nn.Module):
             output, attn = layer(output)
             attention_maps.append(attn)
 
+
+        return output, attention_maps
         # If masked_pos is provided, perform masked token prediction
         # (HJ) from masked_pos to mask style(from masked only decoding to all embedding decoding)
         if mask is not None:

@@ -182,35 +182,26 @@ class CustomClassificationHead(nn.Module):
         return self.classifier(x)
 
 class CustomRegressionHead(nn.Module):
-    def __init__(self, input_dim, output_dim):
-
+    def __init__(self, input_dim=4096, output_dim=1024, num_heads=1, dropout=0.1):
         super().__init__()
         self.linear1 = nn.utils.weight_norm(nn.Linear(input_dim, 2048))
         self.bn1 = nn.LayerNorm(input_dim)
         self.relu = nn.GELU()
         self.dropout = nn.Dropout(0.1)
-        self.linear1_1 = nn.Linear(2048, 2048)
-        self.relu1_1 = nn.GELU()
-        self.dropout1_1 = nn.Dropout(0.1)
         self.linear2 = nn.Linear(2048, output_dim, bias=False)
         self.decoder_bias = nn.Parameter(torch.zeros(output_dim))
-
+        self.proj = nn.Linear(input_dim, output_dim)
 
     def forward(self, x):
-        residual = x  # 원본 유지
-        #x = self.bn1(x)
+        #residual = x  # 원본 유지
+        residual = self.proj(x)  # [B, S, 1024]
+        x = self.bn1(x)
         x = self.linear1(x)        # [B, 2048]
         x = self.relu(x)
         x = self.dropout(x)
-        x = self.linear1_1(x)        # [B, 2048]
-        x = self.relu1_1(x)
-        x = self.dropout1_1(x)
         x = self.linear2(x) + self.decoder_bias  # [B, output_dim]
-        if residual.shape[-1] == x.shape[-1]:
-            x = x + residual  # 최종 residual 연결
+        x = x + residual  # 최종 residual 연결
         return x
-        #return self.regressor(x)
-
 
 def custom_heads(input_dim, num_classes=None, output_dim=None, task_type="classification"):
     """
@@ -317,8 +308,8 @@ def finetune(
         writer.writerow(["Task", "Input", "Epoch", "Train Loss", "Validation Loss", "F1-Score (Classification)", "Learning Rate", "Time"])
 
 #    (HJ)
-    if val_loader is not None:
-        for batch in val_loader:
+    if train_loader is not None:
+        for batch in train_loader:
             input_data, targets = batch[0].to(device), batch[1].to(device)
             break
     else:
@@ -330,11 +321,12 @@ def finetune(
         patch_size = 128
     elif input_type == "channel_emb":
         n_patches = input_data.shape[1] - 1
-        # (HJ)
-        if mask == True:
-            patch_size = 32
-        else:
-            patch_size = 128
+        patch_size = 128
+        # # (HJ)
+        # if mask == True:
+        #     patch_size = 32
+        # else:
+        #     patch_size = 128
     elif input_type == "raw":
         n_patches = input_data.shape[1]
         patch_size = 32
@@ -391,6 +383,7 @@ def finetune(
         print(f"✅ Resuming from the resume_path: {resume_path}")
     else:
         print("🚀 Starting training from scratch")
+
     if (fine_tune):
 
         for epoch in range(epochs):
@@ -403,9 +396,15 @@ def finetune(
                     input_data, targets = batch[0].to(device), batch[1].to(device)
                     optimizer.zero_grad()
 
+                    #diff = torch.abs(input_data[:, 1:, :].view(input_data.size(0), -1) - targets)
+                    #print("(T) Mean absolute difference:", torch.mean(diff))
+
                     with autocast():
                         outputs, attn_maps = wrapper(input_data, input_type=input_type)
                         loss = criterion(outputs, targets)
+
+                    #diff = torch.abs(outputs - targets)
+                    #print("(T) Mean absolute difference:", torch.mean(diff))
 
                     scaler.scale(loss).backward()
                     scaler.step(optimizer)
@@ -442,7 +441,7 @@ def finetune(
 
                 time_now = f"{time.time():.0f}"
                 # Save the best model
-                if (avg_val_loss < best_val_loss):
+                if (epoch>epochs-5) and (avg_val_loss < best_val_loss):
                     best_val_loss = avg_val_loss
                     best_model_path = os.path.join(results_folder, f"{input_type}_epoch{epoch+1}_valLoss{avg_val_loss:.4f}_{time_now}.pth")
                     best_model_path = best_model_path.replace("\\", "/")
@@ -462,7 +461,7 @@ def finetune(
                     power = torch.sum(trues ** 2, dim=-1) + 1e-10
                     nmse = torch.mean(mse / power).item()
                     print(f"Epoch {epoch + 1}, Validation NMSE: {nmse:.6f}")
-                    Accuracy.append(nmse)
+                    #Accuracy.append(nmse)
             scheduler.step()
 
             # Log results
@@ -470,40 +469,67 @@ def finetune(
                 writer = csv.writer(file)
                 writer.writerow([task, input_type, epoch + 1, avg_train_loss, avg_val_loss, f1 if f1 is not None else "-", scheduler.get_last_lr()[0], f"{time_now}"])
 
-        #(HJ)추가수정: Accruacy + Loss 통합
-        # Plot training and validation losses + accuracy/NMSE
-        fig, ax1 = plt.subplots(figsize=(10, 6))
-
-        # 왼쪽 Y축: Loss
-        ax1.plot(range(1, epochs + 1), train_losses, label="Training Loss", color="tab:blue")
-        ax1.plot(range(1, epochs + 1), val_losses, label="Validation Loss", linestyle="--", color="tab:orange")
-        ax1.set_xlabel("Epochs")
-        ax1.set_ylabel("Loss", color="tab:blue")
-        ax1.tick_params(axis='y', labelcolor="tab:blue")
-        ax1.grid(True)
-
-        # 오른쪽 Y축: Accuracy or NMSE
-        ax2 = ax1.twinx()
-        ax2.plot(
-            range(1, epochs + 1), Accuracy,
-            label="F1-Score" if task_type == "classification" else "NMSE",
-            linestyle="-.", marker="o", color="tab:green"
-        )
-        ax2.set_ylabel("F1-Score" if task_type == "classification" else "NMSE", color="tab:green")
-        ax2.tick_params(axis='y', labelcolor="tab:green")
-
-        # 범례 통합
-        lines1, labels1 = ax1.get_legend_handles_labels()
-        lines2, labels2 = ax2.get_legend_handles_labels()
-        ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
-
-        # 제목 및 출력
-        plt.title("Training/Validation Loss and " + ("F1-Score" if task_type == "classification" else "NMSE"))
-        plt.tight_layout()
-
-        # 저장도 가능
-        # plt.savefig(os.path.join(results_folder, "loss_accuracy_curve.png"))
-        plt.show()
     else:
-        print("!!!Fine-tune SKIP!!!")
-    return wrapper, best_model_path, train_losses, val_losses, Accuracy, attn_maps, best_model_path
+        print("!!! Inference!!!")
+        wrapper.eval()
+        val_loss = 0.0
+        with torch.no_grad():
+            for batch in tqdm(val_loader, desc="Inference"):
+                input_data, targets = batch[0].to(device), batch[1].to(device)
+                with autocast():
+                    outputs, _ = wrapper(input_data, input_type=input_type)
+                    loss = criterion(outputs, targets)
+
+                val_loss += loss.item()
+
+        avg_val_loss = val_loss / len(val_loader)
+        val_losses.append(avg_val_loss)
+
+        time_now = f"{time.time():.0f}"
+        print(f"[Evaluation only] Validation loss: {avg_val_loss:.4f}")
+
+    if task_type == "regression":
+        preds = outputs.detach().cpu()
+        trues = targets.detach().cpu()
+        mse = torch.sum((preds - trues) ** 2, dim=-1)
+        power = torch.sum(trues ** 2, dim=-1) + 1e-10
+        nmse = torch.mean(mse / power).item()
+        print(f"[Evaluation only] Validation NMSE: {nmse:.6f}")
+        Accuracy.append(nmse)
+
+        # #(HJ)추가수정: Accruacy + Loss 통합
+        # # Plot training and validation losses + accuracy/NMSE
+        # fig, ax1 = plt.subplots(figsize=(10, 6))
+        #
+        # # 왼쪽 Y축: Loss
+        # ax1.plot(range(1, epochs + 1), train_losses, label="Training Loss", color="tab:blue")
+        # ax1.plot(range(1, epochs + 1), val_losses, label="Validation Loss", linestyle="--", color="tab:orange")
+        # ax1.set_xlabel("Epochs")
+        # ax1.set_ylabel("Loss", color="tab:blue")
+        # ax1.tick_params(axis='y', labelcolor="tab:blue")
+        # ax1.grid(True)
+        #
+        # # 오른쪽 Y축: Accuracy or NMSE
+        # ax2 = ax1.twinx()
+        # ax2.plot(
+        #     range(1, epochs + 1), Accuracy,
+        #     label="F1-Score" if task_type == "classification" else "NMSE",
+        #     linestyle="-.", marker="o", color="tab:green"
+        # )
+        # ax2.set_ylabel("F1-Score" if task_type == "classification" else "NMSE", color="tab:green")
+        # ax2.tick_params(axis='y', labelcolor="tab:green")
+        #
+        # # 범례 통합
+        # lines1, labels1 = ax1.get_legend_handles_labels()
+        # lines2, labels2 = ax2.get_legend_handles_labels()
+        # ax1.legend(lines1 + lines2, labels1 + labels2, loc="upper right")
+        #
+        # # 제목 및 출력
+        # plt.title("Training/Validation Loss and " + ("F1-Score" if task_type == "classification" else "NMSE"))
+        # plt.tight_layout()
+        #
+        # # 저장도 가능
+        # # plt.savefig(os.path.join(results_folder, "loss_accuracy_curve.png"))
+        # plt.show()
+
+    return wrapper, best_model_path, train_losses, val_losses, Accuracy, attn_maps

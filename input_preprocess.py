@@ -188,7 +188,7 @@ def tokenizer(selected_scenario_names,
     patches = [patch for patch_list in patches for patch in patch_list]
     print("Total number of samples:", len(patches))
 
-    grouped_data = defaultdict(list)  # Group samples by sequence length
+    grouped_data = []#defaultdict(list)  # Group samples by sequence length
     grouped_data_2 = []
     
     for user_idx in tqdm(range(len(patches)), desc="Processing items"):
@@ -210,16 +210,20 @@ def tokenizer(selected_scenario_names,
         )
 
         if mask:
-            seq_length = len(sample[0]) 
-            grouped_data[seq_length].append(sample)
+            #seq_length = len(sample[0])
+            #grouped_data[seq_length].append(sample)
+            grouped_data.append(sample)
             grouped_data_2.append(sample_nomask)
         else:
             grouped_data_2.append(sample)
     
     if mask:
         # Normalize keys to 0, 1, 2, ...
-        normalized_grouped_data = {i: grouped_data[key] for i, key in enumerate(sorted(grouped_data.keys()))}
+        #normalized_grouped_data = {i: grouped_data[key] for i, key in enumerate(sorted(grouped_data.keys()))}
+        normalized_grouped_data = torch.stack(grouped_data, dim=0)
         normalized_grouped_data2 = torch.stack(grouped_data_2, dim=0)
+        if snr is not None:
+            normalized_grouped_data += generate_gaussian_noise(normalized_grouped_data, snr)
     else:
         normalized_grouped_data = torch.stack(grouped_data_2, dim=0)
         # normalized_grouped_data = grouped_data_2
@@ -235,7 +239,7 @@ def tokenizer(selected_scenario_names,
             labels = normalized_grouped_data
             print(f"[Embedding Regression] Tensor label. Shape = {labels.shape}")
 
-    return normalized_grouped_data, labels, raw_chs
+    return normalized_grouped_data.float(), labels.float(), raw_chs
 #%% REMOVE ZERO CHANNELS AND SCALE
 def deepmimo_data_cleaning(deepmimo_data):
     idxs = np.where(deepmimo_data['user']['LoS'] != -1)[0]
@@ -269,7 +273,7 @@ def make_sample(user_idx, patch, word2id, n_patches, n_masks, patch_size, MAX_LE
     if not mask:
         return torch.tensor(input_ids)
     else:
-        return [input_ids, masked_tokens, masked_pos]
+        return torch.tensor(input_ids)
 #%% Patch GENERATION
 def patch_maker(original_ch, patch_rows, patch_cols):
     # Step 1: Remove the singleton channel dimension

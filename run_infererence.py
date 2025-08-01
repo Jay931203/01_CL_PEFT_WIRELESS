@@ -36,7 +36,7 @@ test_cond = ["Tasks","Snrs"][1]
 fine_tune = False
 mask=True
 snr = 30
-epoch_num = 150
+epoch_num = 200
 
 continual_learning_type = [None, "LwF","EWC"][1]
 #scenario_nums = [    6,    7,    11,    12,    15,    18,    19], 7, 11, 12
@@ -52,12 +52,14 @@ for scenario in scenario_nums:
     city_order[all_scenarios[scenario]] = scenario
 
 new_metrics_by_train_city = {}
+
 #"results/Embedding Regression/1754022362/channel_emb_epoch149_valLoss64.8729_1754022514.pth" #Scenario 7, 15dB Head-baseline(Frozen)
-# Avg SNR
+#
 #
 #"results/Embedding Regression/1753967504/channel_emb_epoch147_valLoss12.7858_1753967562.pth" #Full Scenario, head-baseline
 #
 #
+
 baseline =  "results/Embedding Regression/1754022362/channel_emb_epoch149_valLoss64.8729_1754022514.pth" #12, head-baseline
 best_model_paths = {
     "city_6_miami": None,
@@ -83,7 +85,7 @@ for i in range(interation):
         main_order[key] = base_number
 
 #print(main_order)
-
+first_flag = True
 for i in range(interation):
     snr = snr_nums[i]
     for scenario in scenario_nums:
@@ -137,26 +139,9 @@ for i in range(interation):
         subset_data = preprocessed_data[:]
         subset_labels = labels[:]
 
-        # #Step 2: Inference ---------
+        # #Step 2: GPU loading
         print(f"💻 Using device: {device}")
         print(f"🧠 GPU name: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else 'No GPU'}")
-        # chs = lwm_inference(
-        #     model,
-        #     subset_data,
-        #     input_type= input_types[0],
-        #     device=device,
-        #     task=task,
-        #     task_type=task_type,
-        #     batch_size=128,
-        #     visualization=False,
-        #     test_type = test_type,
-        #     mask=mask,
-        #     labels=subset_labels,
-        #     visualization_method=visualization_method
-        # )
-        # print(subset_data.shape)
-        print("✅ Inference Done")
-        #sys.exit(1)
 
         # Step 3: Proposed Fine-tuning
         metrics_by_scenario = {}
@@ -201,7 +186,9 @@ for i in range(interation):
                         fine_tune=fine_tune,
                         resume_path = pth_path,
                         device=device,
-                        task=task
+                        task=task,
+                        continual_learning_type = continual_learning_type,
+                        first_flag = first_flag
                     )
 
                     if (fine_tune):
@@ -216,8 +203,13 @@ for i in range(interation):
         fine_tune = False
 
         if (test_cond == 'Snrs'):
-            for snr_idx in snr_nums:
-                print(f"▶️ Running for scenario: {selected_scenario_names[0]}, {snr_idx}")
+            Tasks = snr_nums
+        else:
+            Tasks = scenario_nums
+        for Task in Tasks:
+            print(f"▶️ Running for scenario: {selected_scenario_names[0]}, {Task}")
+
+            if (test_cond == 'Snrs'):
                 preprocessed_data, labels, raw_chs = tokenizer(
                     selected_scenario_names,
                     bs_idxs=[3],           # BS index 3번 사용
@@ -226,90 +218,58 @@ for i in range(interation):
                     n_beams = n_beams,
                     mask=mask,
                     masking_percent = 0.3,
-                    snr = snr_idx
+                    snr = Task
                 )
-
-                # Prepare data loaders
-                train_loader, val_loader, samples, target = prepare_loaders(
-                    preprocessed_data=preprocessed_data,
-                    labels=labels,
-                    selected_patches_idxs=selected_patches_idxs,
-                    input_type=input_type,
-                    task_type=task_type,
-                    train_ratio=train_ratio,
-                    batch_size=128,
-                    seed=42
-                )
-
-                # Fine-tune LWM
-                fine_tuned_model, best_model_path, train_losses, val_losses, Accuracy, attn_maps_ft = finetune(
-                    base_model=model,
-                    train_loader=train_loader,
-                    val_loader=val_loader,
-                    task_type=task_type,
-                    input_type=input_type,
-                    num_classes=n_beams if task == 'Beam Prediction' else 2 if task == 'LoS/NLoS Classification' else None,
-                    output_dim=target.shape[-1] if task_type == 'regression' else None,
-                    use_custom_head=True,
-                    fine_tune_layers=fine_tuning_stat,
-                    optimizer_config={"lr": 1e-3},
-                    epochs=epoch_num,
-                    mask=mask,
-                    fine_tune=fine_tune,
-                    resume_path=baseline,
-                    device=device,
-                    task=task
-                )
-                metrics_by_snr[snr_idx] = Accuracy[-1]
-
-        else:
-            for scenario in scenario_nums:
-                scenario_name = all_scenarios[scenario]  # 예: city_6_miami
-                print(f"▶️ Running for scenario: {scenario_name}")
+            else:
+                scenario_name = all_scenarios[Task]
                 preprocessed_data, labels, raw_chs = tokenizer(
                     [scenario_name],
-                    bs_idxs=[3],           # BS index 3번 사용
-                    load_data=True,       # 이미 있으면 True, 처음 실행이면 False
+                    bs_idxs=[3],  # BS index 3번 사용
+                    load_data=True,  # 이미 있으면 True, 처음 실행이면 False
                     task=task,
-                    n_beams = n_beams,
+                    n_beams=n_beams,
                     mask=mask,
-                    masking_percent = 0.3,
-                    snr = snr
+                    masking_percent=0.3,
+                    snr=snr
                 )
 
-                # Prepare data loaders
-                train_loader, val_loader, samples, target = prepare_loaders(
-                    preprocessed_data=preprocessed_data,
-                    labels=labels,
-                    selected_patches_idxs=selected_patches_idxs,
-                    input_type=input_type,
-                    task_type=task_type,
-                    train_ratio=train_ratio,
-                    batch_size=128,
-                    seed=42
-                )
+            # Prepare data loaders
+            train_loader, val_loader, samples, target = prepare_loaders(
+                preprocessed_data=preprocessed_data,
+                labels=labels,
+                selected_patches_idxs=selected_patches_idxs,
+                input_type=input_type,
+                task_type=task_type,
+                train_ratio=train_ratio,
+                batch_size=128,
+                seed=42
+            )
 
-                # Fine-tune LWM
-                fine_tuned_model, best_model_path, train_losses, val_losses, Accuracy, attn_maps_ft = finetune(
-                    base_model=model,
-                    train_loader=train_loader,
-                    val_loader=val_loader,
-                    task_type=task_type,
-                    input_type=input_type,
-                    num_classes=n_beams if task == 'Beam Prediction' else 2 if task == 'LoS/NLoS Classification' else None,
-                    output_dim=target.shape[-1] if task_type == 'regression' else None,
-                    use_custom_head=True,
-                    fine_tune_layers=fine_tuning_stat,
-                    optimizer_config={"lr": 1e-3},
-                    epochs=epoch_num,
-                    mask=mask,
-                    fine_tune=fine_tune,
-                    resume_path=baseline,
-                    device=device,
-                    task=task
-                )
-                metrics_by_scenario[scenario_name] = Accuracy[-1]
-
+            # Fine-tune LWM
+            fine_tuned_model, best_model_path, train_losses, val_losses, Accuracy, attn_maps_ft = finetune(
+                base_model=model,
+                train_loader=train_loader,
+                val_loader=val_loader,
+                task_type=task_type,
+                input_type=input_type,
+                num_classes=n_beams if task == 'Beam Prediction' else 2 if task == 'LoS/NLoS Classification' else None,
+                output_dim=target.shape[-1] if task_type == 'regression' else None,
+                use_custom_head=True,
+                fine_tune_layers=fine_tuning_stat,
+                optimizer_config={"lr": 1e-3},
+                epochs=epoch_num,
+                mask=mask,
+                fine_tune=fine_tune,
+                resume_path=baseline,
+                device=device,
+                task=task,
+                continual_learning_type=continual_learning_type,
+                first_flag=first_flag
+            )
+            if (test_cond == 'Snrs'):
+                metrics_by_snr[Task] = Accuracy[-1]
+            else:
+                metrics_by_scenario[Task] = Accuracy[-1]
 
         if (test_cond == 'Snrs'):
             metrics = metrics_by_snr
@@ -341,6 +301,7 @@ for i in range(interation):
         plt.close()
         for _, val in metrics.items():
             new_metrics_by_train_city[selected_scenario_names[0]+ f' ({i})'].append(val)
+        first_flag = False
 
 import pandas as pd
 # 3. DataFrame으로 변환
@@ -377,10 +338,7 @@ for test_city in df_long_sorted['Test City'].unique():
 # sorted_items = sorted(main_order.items(), key=lambda x: x[1])  # value 기준 정렬
 # xtick_positions = [num for city, num in sorted_items]
 # xtick_labels = [city for city, num in sorted_items]
-#zplt.xticks(ticks=xtick_positions, labels=xtick_labels, rotation=45, ha='right')
 # plt.xticks(ticks=xtick_positions, labels=xtick_labels, rotation=45, ha='right')
-# for i in range(interation):
-#     plt.axvline(x=20*(i+1), color='gray', linestyle='--', linewidth=1)
 plt.xticks(ticks=range(len(snr_nums)), labels=snr_nums, rotation=45, ha='right')
 plt.xlabel("Trained On")
 plt.ylabel("NMSE")
@@ -388,7 +346,7 @@ plt.title("Sequential Testing")
 plt.legend(title="Evaluated On", bbox_to_anchor=(1.02, 1), loc='upper left')
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"final_plot(original)_snr.png")
+plt.savefig(f"final_plot(original)_{test_cond}_{continual_learning_type}.png")
 plt.close()
 
 plt.figure(figsize=(10, 6))
@@ -403,13 +361,11 @@ for test_city in cl_fixed['Test City'].unique():
     )
 
 plt.xticks(ticks=range(len(snr_nums)), labels=snr_nums, rotation=45, ha='right')
-# for i in range(interation):
-#     plt.axvline(x=20*(i+1), color='gray', linestyle='--', linewidth=1)
 plt.xlabel("Main City Number (Trained On)")
 plt.ylabel("NMSE")
 plt.title("NMSE vs Trained City (Sequential Testing per Test City)")
 plt.legend(title="Test City (Evaluated On)", bbox_to_anchor=(1.02, 1), loc='upper left')
 plt.grid(True)
 plt.tight_layout()
-plt.savefig(f"final_plot(truncated)_snr.png")
+plt.savefig(f"final_plot(truncated)_{test_cond}_{continual_learning_type}.png")
 plt.close()

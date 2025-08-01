@@ -8,12 +8,29 @@ This script contains the LWM pre-training and task-specific fine-tuning function
 """
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 from tqdm import tqdm
 import matplotlib.pyplot as plt
 import os
 import csv
 from utils import count_parameters
 import time
+
+class LwFLoss(nn.Module):
+    def __init__(self, task_loss_fn, distill_weight=1.0, temperature=2.0):
+        super().__init__()
+        self.task_loss_fn = task_loss_fn
+        self.distill_weight = distill_weight
+        self.temperature = temperature
+
+    def forward(self, y_pred, y_true, y_soft_old):
+        task_loss = self.task_loss_fn(y_pred, y_true)
+        T = self.temperature
+        p = F.log_softmax(y_pred / T, dim=1)
+        q = F.softmax(y_soft_old / T, dim=1)
+        distill_loss = F.kl_div(p, q, reduction='batchmean') * (T * T)
+        return task_loss + self.distill_weight * distill_loss
+
 #%% LOSS FUNCTION
 def nmse_loss(y_pred, y_true):
     y_pred_flat = y_pred.view(y_pred.size(0), -1)
@@ -291,7 +308,9 @@ def finetune(
     fine_tune=False,
     resume_path = None,
     device="cuda",
-    task="Beam Prediction"
+    task="Beam Prediction",
+    continual_learning_type = None,
+    first_flag = True
 ):
     """
     Configures and fine-tunes the base model with user-defined settings, saving results and models.
@@ -322,11 +341,6 @@ def finetune(
     elif input_type == "channel_emb":
         n_patches = input_data.shape[1] - 1
         patch_size = 128
-        # # (HJ)
-        # if mask == True:
-        #     patch_size = 32
-        # else:
-        #     patch_size = 128
     elif input_type == "raw":
         n_patches = input_data.shape[1]
         patch_size = 32
@@ -367,9 +381,29 @@ def finetune(
     # Set up the scheduler for learning rate decay
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.8)  # Example: Reduce LR by 10x every 10 epochs
 
+    if (first_flag == True):
+        continual_learning_type = None
+    if (continual_learning_type == "LwF"):
+        import copy
+        base_model_copy = copy.deepcopy(wrapper.model)
+        task_head_copy = custom_heads(input_dim=n_patches*patch_size, num_classes=num_classes, output_dim=output_dim, task_type=task_type)
+        # 새 wrapper 구성
+        old_model = FineTuningWrapper(
+            model=base_model_copy,
+            task_head=task_head_copy,
+            mask=wrapper.mask
+        ).to(device)
+        old_model.load_state_dict(torch.load(resume_path, map_location=device))
+        old_model.eval()
+        print("🚀Copy Old model for LwF")
+        for param in old_model.parameters():
+            param.requires_grad = False
+
     # Set up the loss criterion
     if criterion is None:
         criterion = nn.CrossEntropyLoss() if task_type == "classification" else nn.MSELoss()
+        if continual_learning_type == "LwF":
+            criterion = LwFLoss(task_loss_fn=criterion, distill_weight=1.0, temperature=2.0)
 
     scaler = GradScaler()
     train_losses, val_losses, Accuracy = [], [], []
@@ -395,21 +429,19 @@ def finetune(
                 for batch in progress_bar:
                     input_data, targets = batch[0].to(device), batch[1].to(device)
                     optimizer.zero_grad()
-
-                    #diff = torch.abs(input_data[:, 1:, :].view(input_data.size(0), -1) - targets)
-                    #print("(T) Mean absolute difference:", torch.mean(diff))
-
                     with autocast():
-                        outputs, attn_maps = wrapper(input_data, input_type=input_type)
-                        loss = criterion(outputs, targets)
-
-                    #diff = torch.abs(outputs - targets)
-                    #print("(T) Mean absolute difference:", torch.mean(diff))
+                        if continual_learning_type == "LwF":
+                            output_new, attention_map = wrapper(input_data, input_type=input_type)
+                            with torch.no_grad():
+                                output_old, attention_map = old_model(input_data, input_type=input_type)
+                            loss = criterion(y_pred=output_new, y_true=targets, y_soft_old=output_old)
+                        else:
+                            outputs, attn_maps = wrapper(input_data, input_type=input_type)
+                            loss = criterion(outputs, targets)
 
                     scaler.scale(loss).backward()
                     scaler.step(optimizer)
                     scaler.update()
-
                     epoch_loss += loss.item()
                     progress_bar.set_postfix({"Loss": loss.item()})
 
@@ -426,8 +458,14 @@ def finetune(
                     for batch in val_loader:
                         input_data, targets = batch[0].to(device), batch[1].to(device)
                         with autocast():
-                            outputs, _ = wrapper(input_data, input_type=input_type)
-                            loss = criterion(outputs, targets)
+                            if continual_learning_type == "LwF":
+                                outputs, attention_map = wrapper(input_data, input_type=input_type)
+                                with torch.no_grad():
+                                    output_old, attention_map = old_model(input_data, input_type=input_type)
+                                loss = criterion(y_pred=outputs, y_true=targets, y_soft_old=output_old)
+                            else:
+                                outputs, _ = wrapper(input_data, input_type=input_type)
+                                loss = criterion(outputs, targets)
 
                         val_loss += loss.item()
 
@@ -477,8 +515,14 @@ def finetune(
             for batch in tqdm(val_loader, desc="Inference"):
                 input_data, targets = batch[0].to(device), batch[1].to(device)
                 with autocast():
-                    outputs, _ = wrapper(input_data, input_type=input_type)
-                    loss = criterion(outputs, targets)
+                    if continual_learning_type == "LwF":
+                        outputs, attention_map = wrapper(input_data, input_type=input_type)
+                        with torch.no_grad():
+                            output_old, attention_map = old_model(input_data, input_type=input_type)
+                        loss = criterion(y_pred=outputs, y_true=targets, y_soft_old=output_old)
+                    else:
+                        outputs, _ = wrapper(input_data, input_type=input_type)
+                        loss = criterion(outputs, targets)
 
                 val_loss += loss.item()
 
